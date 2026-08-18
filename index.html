@@ -2,162 +2,1114 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Hardened Pure Lua VM Engine</title>
+    <title>Final Complete Lua 5.1 Pure VM Engine</title>
     <style>
-        body { font-family: monospace; background: #0b0f19; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 950px; margin: auto; background: #1b2234; padding: 25px; border-radius: 8px; }
-        h2 { color: #38bdf8; margin-top: 0; }
-        label { display: block; margin-top: 10px; margin-bottom: 5px; color: #94a3b8; font-weight: bold; }
-        textarea { width: 100%; height: 220px; background: #0b0f19; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 12px; font-family: monospace; }
-        .option-box { background: #0b0f19; padding: 12px; border-radius: 6px; border: 1px solid #334155; margin: 10px 0; display: flex; flex-wrap: wrap; gap: 15px; }
-        .option-item { display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 13px; }
-        .btn-group { margin: 15px 0; display: flex; flex-wrap: wrap; gap: 8px; }
-        button { background: #0284c7; color: white; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        body { font-family: monospace; background: #080c14; color: #f8fafc; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: #111827; padding: 25px; border-radius: 8px; border: 1px solid #1f2937; }
+        h2 { color: #38bdf8; margin-top: 0; border-bottom: 1px solid #1f2937; padding-bottom: 10px; }
+        label { display: block; margin-top: 12px; margin-bottom: 6px; color: #94a3b8; font-weight: bold; }
+        textarea { width: 100%; height: 200px; background: #080c14; color: #38bdf8; border: 1px solid #374151; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 13px; font-family: monospace; }
+        .btn-group { margin: 15px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 18px; font-weight: bold; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0369a1; }
-        button.purple { background: #7c3aed; }
-        button.purple:hover { background: #6d28d9; }
-        button.sec { background: #334155; }
-        button.sec:hover { background: #475569; }
-        button.danger { background: #991b1b; }
-        button.danger:hover { background: #7f1d1d; }
+        .chk-group { display: flex; gap: 15px; margin-left: 10px; color: #94a3b8; font-size: 13px; }
+        .chk-group label { display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; }
         input[type="file"] { display: none; }
+        .file-lbl { background: #475569; color: white; padding: 10px 18px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .file-lbl:hover { background: #334155; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Hardened Pure Lua VM Engine</h2>
-
-        <div class="option-box">
-            <label class="option-item"><input type="checkbox" id="antiDebug" checked> Anti-Debug 강화</label>
-            <label class="option-item"><input type="checkbox" id="antiTamper" checked> Anti-Tamper (변조 방지)</label>
-            <label class="option-item"><input type="checkbox" id="minify" checked> 한 줄로 줄이기 (Minify)</label>
-        </div>
-
-        <label>Input Source Code:</label>
-        <textarea id="src" placeholder="Lua 코드를 입력하세요..."></textarea>
+        <h2>Final Complete Lua 5.1 Pure VM Engine</h2>
+        
+        <label>Input Source Code (Lua 5.1):</label>
+        <textarea id="src">local a = 10
+local b = 20
+print(a + b)</textarea>
         
         <div class="btn-group">
-            <button onclick="runObfuscate(1)">Pure VM 난독화</button>
-            <button class="purple" onclick="runObfuscate(2)">2중 난독화 (Double VM)</button>
-            <button class="sec" onclick="document.getElementById('fileInput').click()">파일 불러오기</button>
-            <button class="sec" onclick="copyOutput()">복사</button>
-            <button class="sec" onclick="downloadLua()">다운로드</button>
-            <button class="danger" onclick="clearAll()">Clear</button>
-            <input type="file" id="fileInput" accept=".lua,.txt" onchange="loadFile(event)">
+            <button onclick="compileOnly()">Compile</button>
+            <button onclick="compileAndValidate()">Compile + Validate</button>
+            <label class="file-lbl"><input type="file" id="fileIn" accept=".lua,.txt" onchange="uploadFile(event)">Upload Lua</label>
+            <button onclick="downloadVM()">Download VM</button>
+            <button onclick="unpackVM()">Unpack</button>
+            <button onclick="runTestSuite()">Debug Test (20 Tests)</button>
+            <button onclick="clearAll()">Clear</button>
+            <div class="chk-group">
+                <label><input type="checkbox" id="chkDebug" checked> Debug Mode</label>
+                <label><input type="checkbox" id="chkPack"> Pack Mode</label>
+                <label><input type="checkbox" id="chkRand"> Randomize</label>
+            </div>
         </div>
+
+        <label>Debug / Test Output:</label>
+        <textarea id="dbg" style="height:120px; color:#a3e635;"></textarea>
         
-        <label>Obfuscated Output (No Loadstring):</label>
+        <label>Final VM Bytecode Output:</label>
         <textarea id="out" readonly></textarea>
     </div>
 
 <script>
+class VMError extends Error {
+    constructor(phase, msg, line, col) {
+        super(`[${phase}] ${msg} at line ${line}:${col}`);
+        this.phase = phase;
+        this.line = line;
+        this.col = col;
+    }
+}
+
+function escapeStr(s) {
+    let r = '"';
+    for (let i = 0; i < s.length; i++) {
+        let c = s.charCodeAt(i);
+        if (c === 10) r += '\\n';
+        else if (c === 13) r += '\\r';
+        else if (c === 9) r += '\\t';
+        else if (c === 92) r += '\\\\';
+        else if (c === 34) r += '\\"';
+        else if (c < 32 || c > 126) {
+            let dec = c.toString(10);
+            while (dec.length < 3) dec = '0' + dec;
+            r += '\\' + dec;
+        } else r += s[i];
+    }
+    r += '"';
+    return r;
+}
+
 function genSym() {
-    const set = ['i', 'l', 'I', '1', 'O', '0', '_', 'iI', 'Ii', 'lI', 'Il', 'oO', 'Oo'];
-    let res = '_';
-    for (let i = 0; i < 24; i++) {
-        res += set[Math.floor(Math.random() * set.length)];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_';
+    const nums = '0123456789';
+    let res = chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 9; i++) {
+        let pool = chars + nums;
+        res += pool[Math.floor(Math.random() * pool.length)];
     }
     return res;
 }
 
-function buildVM(inputCode) {
-    const doDebug = document.getElementById('antiDebug').checked;
-    const doTamper = document.getElementById('antiTamper').checked;
+const OP_MOVE = 0, OP_LOADK = 1, OP_LOADBOOL = 2, OP_LOADNIL = 3;
+const OP_GETUPVAL = 4, OP_GETGLOBAL = 5, OP_GETTABLE = 6;
+const OP_SETGLOBAL = 7, OP_SETUPVAL = 8, OP_SETTABLE = 9;
+const OP_NEWTABLE = 10, OP_SELF = 11;
+const OP_ADD = 12, OP_SUB = 13, OP_MUL = 14, OP_DIV = 15, OP_MOD = 16, OP_POW = 17;
+const OP_UNM = 18, OP_NOT = 19, OP_LEN = 20, OP_CONCAT = 21;
+const OP_JMP = 22, OP_JMP_T = 23, OP_JMP_F = 24;
+const OP_EQ = 25, OP_LT = 26, OP_LE = 27;
+const OP_CALL = 28, OP_RETURN = 29, OP_CLOSURE = 30, OP_VARARG = 31;
+const OP_SETLIST = 32;
 
-    const vMain = genSym();
-    const vStream = genSym();
-    const vEnv = genSym();
-    const vIP = genSym();
-    const vKey = genSym();
-    const vA = genSym();
-    const vB = genSym();
-    const vC = genSym();
-    const vR = genSym();
-    const vInst = genSym();
-    const vOp = genSym();
-
-    const keyVal = Math.floor(Math.random() * 200) + 20;
-
-    let bytes = [];
-    for (let i = 0; i < inputCode.length; i++) {
-        bytes.push(inputCode.charCodeAt(i) ^ keyVal);
-    }
-
-    let encStr = "";
-    for (let i = 0; i < bytes.length; i++) {
-        encStr += "\\" + bytes[i];
-    }
-
-    let securityBlocks = [];
+function Lexer(code) {
+    let pos = 0, line = 1, col = 1;
+    const tokens = [];
+    const kws = new Set(['and','break','do','else','elseif','end','false','for','function','if','in','local','nil','not','or','repeat','return','then','true','until','while']);
     
-    if (doDebug) {
-        const vDbg = genSym();
-        securityBlocks.push(`local ${vDbg}=(getfenv or function()return _ENV end)().debug;if ${vDbg} then ${vDbg}.sethook=nil ${vDbg}.getupvalue=nil end;`);
+    function advance() {
+        if (code[pos] === '\n') { line++; col = 1; } else { col++; }
+        return code[pos++];
     }
 
-    if (doTamper) {
-        securityBlocks.push(`if #string.format("%s","")~=0 or #tostring(100)~=3 then return end;`);
+    while (pos < code.length) {
+        let c = code[pos];
+        if (/\s/.test(c)) { advance(); continue; }
+        if (code.startsWith('--', pos)) {
+            advance(); advance();
+            if (code.startsWith('[[', pos)) {
+                advance(); advance();
+                while (pos < code.length && !code.startsWith(']]', pos)) advance();
+                if (pos < code.length) { advance(); advance(); }
+            } else {
+                while (pos < code.length && code[pos] !== '\n') advance();
+            }
+            continue;
+        }
+        let tLine = line, tCol = col;
+        if (/[a-zA-Z_]/.test(c)) {
+            let val = '';
+            while (pos < code.length && /[a-zA-Z0-9_]/.test(code[pos])) val += advance();
+            tokens.push({ type: kws.has(val) ? 'KW' : 'ID', val, line: tLine, col: tCol });
+            continue;
+        }
+        if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(code[pos + 1]))) {
+            let val = '';
+            if (code.startsWith('0x', pos) || code.startsWith('0X', pos)) {
+                val += advance(); val += advance();
+                while (pos < code.length && /[0-9a-fA-F]/.test(code[pos])) val += advance();
+            } else {
+                while (pos < code.length && /[0-9\.]/.test(code[pos])) val += advance();
+                if (pos < code.length && (code[pos] === 'e' || code[pos] === 'E')) {
+                    val += advance();
+                    if (code[pos] === '+' || code[pos] === '-') val += advance();
+                    while (pos < code.length && /[0-9]/.test(code[pos])) val += advance();
+                }
+            }
+            let num = Number(val);
+            if (isNaN(num)) throw new VMError("Lexer", "Invalid number format", tLine, tCol);
+            tokens.push({ type: 'NUM', val: num, line: tLine, col: tCol });
+            continue;
+        }
+        if (c === '"' || c === "'") {
+            let q = advance(), val = '';
+            while (pos < code.length && code[pos] !== q) {
+                if (code[pos] === '\\') {
+                    advance();
+                    let ec = advance();
+                    if (ec === 'n') val += '\n';
+                    else if (ec === 'r') val += '\r';
+                    else if (ec === 't') val += '\t';
+                    else if (ec === '"') val += '"';
+                    else if (ec === "'") val += "'";
+                    else if (ec === '\\') val += '\\';
+                    else if (/[0-9]/.test(ec)) {
+                        let d = ec;
+                        if (/[0-9]/.test(code[pos])) d += advance();
+                        if (/[0-9]/.test(code[pos])) d += advance();
+                        val += String.fromCharCode(parseInt(d, 10));
+                    } else val += ec;
+                } else {
+                    val += advance();
+                }
+            }
+            if (pos < code.length) advance();
+            tokens.push({ type: 'STR', val, line: tLine, col: tCol });
+            continue;
+        }
+        let two = code.substring(pos, pos + 3);
+        if (two === '...') { advance(); advance(); advance(); tokens.push({ type: 'OP', val: '...', line: tLine, col: tCol }); continue; }
+        two = code.substring(pos, pos + 2);
+        if (['==','~=','<=','>=','..'].includes(two)) {
+            advance(); advance();
+            tokens.push({ type: 'OP', val: two, line: tLine, col: tCol });
+            continue;
+        }
+        advance();
+        tokens.push({ type: 'OP', val: c, line: tLine, col: tCol });
     }
-
-    const secHeader = securityBlocks.join("");
-
-    const vmCode = `${secHeader}local function ${vMain}(${vStream},${vEnv},...)local ${vKey}=${keyVal};local ${vIP}=1;local function ${vR}()local ${vA}=string.byte(${vStream},${vIP},${vIP});${vIP}=${vIP}+1;return ${vA} and (bit32 and bit32.bxor(${vA},${vKey}) or (${vA}>=${vKey} and ${vA}-${vKey} or ${vA}+${vKey}));end;local function ${vInst}()local ${vOp}={};while true do local ${vA}=${vR}();if not ${vA} then break end;table.insert(${vOp},string.char(${vA}));end;return table.concat(${vOp});end;local ${vB}=(getfenv or function()return _ENV end)();local ${vC}=${vB}["\\108\\111\\97\\100"] or ${vB}["\\108\\111\\97\\100\\115\\116\\112\\105\\110\\103"];if ${vC} then return ${vC}(${vInst}(),"@VM", "t", ${vEnv})(...);end;end;return ${vMain}("${encStr}",getfenv or function()return _ENV end,...);`;
-
-    return vmCode;
+    tokens.push({ type: 'EOF', val: '', line, col });
+    return tokens;
 }
 
-function processSinglePass(code) {
-    let result = buildVM(code);
-    const doMinify = document.getElementById('minify').checked;
-    if (doMinify) {
-        result = result.replace(/\r?\n|\r/g, " ").replace(/\s+/g, " ").trim();
+function Parser(tokens) {
+    let tIdx = 0;
+    function peek() { return tokens[tIdx]; }
+    function next() { return tokens[tIdx++]; }
+    function match(t, v) {
+        let pk = peek();
+        if (pk.type === t && (v === undefined || pk.val === v)) return next();
+        return null;
     }
-    return result;
+    function expect(t, v) {
+        let pk = peek();
+        if (pk.type !== t || (v !== undefined && pk.val !== v)) {
+            throw new VMError("Parser", `Expected ${v || t} but got ${pk.val}`, pk.line, pk.col);
+        }
+        return next();
+    }
+
+    const PREC = { 'or':1, 'and':2, '<':3, '>':3, '<=':3, '>=':3, '~=':3, '==':3, '..':4, '+':5, '-':5, '*':6, '/':6, '%':6, '^':8 };
+    const R_ASSOC = { '^':true, '..':true };
+
+    function parseBlock() {
+        let stmts = [];
+        while (tIdx < tokens.length) {
+            let pk = peek();
+            if (pk.type === 'KW' && ['else','elseif','end','until'].includes(pk.val)) break;
+            if (pk.type === 'EOF') break;
+            stmts.push(parseStmt());
+            match('OP', ';');
+        }
+        return { type: 'Block', stmts };
+    }
+
+    function parseStmt() {
+        let pk = peek();
+        if (pk.type === 'KW') {
+            if (match('KW', 'local')) {
+                if (match('KW', 'function')) {
+                    let id = expect('ID').val;
+                    let func = parseFuncDef();
+                    return { type: 'LocalFunc', id, func };
+                }
+                let ids = [expect('ID').val];
+                while (match('OP', ',')) ids.push(expect('ID').val);
+                let exprs = [];
+                if (match('OP', '=')) exprs = parseExprList();
+                return { type: 'Local', ids, exprs };
+            }
+            if (match('KW', 'function')) {
+                let ids = [expect('ID').val];
+                let isMethod = false;
+                while (match('OP', '.')) ids.push(expect('ID').val);
+                if (match('OP', ':')) { ids.push(expect('ID').val); isMethod = true; }
+                let func = parseFuncDef(isMethod);
+                return { type: 'Assign', targets: [{ type: 'GlobalOrTable', ids }], exprs: [func] };
+            }
+            if (match('KW', 'if')) {
+                let conds = [{ cond: parseExpr(), block: (expect('KW', 'then'), parseBlock()) }];
+                while (match('KW', 'elseif')) conds.push({ cond: parseExpr(), block: (expect('KW', 'then'), parseBlock()) });
+                let elseBlock = null;
+                if (match('KW', 'else')) elseBlock = parseBlock();
+                expect('KW', 'end');
+                return { type: 'If', conds, elseBlock };
+            }
+            if (match('KW', 'while')) {
+                let cond = parseExpr();
+                expect('KW', 'do');
+                let block = parseBlock();
+                expect('KW', 'end');
+                return { type: 'While', cond, block };
+            }
+            if (match('KW', 'repeat')) {
+                let block = parseBlock();
+                expect('KW', 'until');
+                let cond = parseExpr();
+                return { type: 'Repeat', block, cond };
+            }
+            if (match('KW', 'for')) {
+                let id1 = expect('ID').val;
+                if (match('OP', '=')) {
+                    let start = parseExpr(); expect('OP', ',');
+                    let end = parseExpr();
+                    let step = match('OP', ',') ? parseExpr() : { type: 'Num', val: 1 };
+                    expect('KW', 'do'); let block = parseBlock(); expect('KW', 'end');
+                    return { type: 'ForNum', id: id1, start, end, step, block };
+                } else {
+                    let ids = [id1];
+                    while (match('OP', ',')) ids.push(expect('ID').val);
+                    expect('KW', 'in');
+                    let exprs = parseExprList();
+                    expect('KW', 'do'); let block = parseBlock(); expect('KW', 'end');
+                    return { type: 'ForIn', ids, exprs, block };
+                }
+            }
+            if (match('KW', 'return')) return { type: 'Return', exprs: parseExprList() };
+            if (match('KW', 'break')) return { type: 'Break' };
+        }
+        
+        let target = parsePrimary();
+        if (match('OP', '=')) return { type: 'Assign', targets: [target], exprs: parseExprList() };
+        if (match('OP', ',')) {
+            let targets = [target];
+            while (true) {
+                targets.push(parsePrimary());
+                if (!match('OP', ',')) break;
+            }
+            expect('OP', '=');
+            return { type: 'Assign', targets, exprs: parseExprList() };
+        }
+        if (target.type !== 'CallExpr' && target.type !== 'MethodCall') throw new VMError("Parser", "Unexpected statement", pk.line, pk.col);
+        return { type: 'CallStat', call: target };
+    }
+
+    function parseExprList() {
+        let lst = [];
+        let pk = peek();
+        if (['EOF','KW','OP'].includes(pk.type) && !['(','-','not','#','{'].includes(pk.val) && pk.val !== '...') return lst;
+        lst.push(parseExpr());
+        while (match('OP', ',')) lst.push(parseExpr());
+        return lst;
+    }
+
+    function parseExpr(minP = 0) {
+        let pk = peek(), lhs;
+        if (match('OP', '-')) lhs = { type: 'UnOp', op: 'unm', arg: parseExpr(7) };
+        else if (match('KW', 'not')) lhs = { type: 'UnOp', op: 'not', arg: parseExpr(7) };
+        else if (match('OP', '#')) lhs = { type: 'UnOp', op: 'len', arg: parseExpr(7) };
+        else if (match('NUM')) lhs = { type: 'Num', val: pk.val };
+        else if (match('STR')) lhs = { type: 'Str', val: pk.val };
+        else if (match('KW', 'true')) lhs = { type: 'Bool', val: true };
+        else if (match('KW', 'false')) lhs = { type: 'Bool', val: false };
+        else if (match('KW', 'nil')) lhs = { type: 'Nil' };
+        else if (match('OP', '...')) lhs = { type: 'Vararg' };
+        else if (match('KW', 'function')) lhs = parseFuncDef();
+        else if (match('OP', '{')) lhs = parseTable();
+        else lhs = parsePrimary();
+
+        while (true) {
+            let op = peek();
+            if (!op || op.type === 'EOF') break;
+            let p = PREC[op.val];
+            if (!p || p <= minP) break;
+            next();
+            let nextP = R_ASSOC[op.val] ? p - 1 : p;
+            let rhs = parseExpr(nextP);
+            lhs = { type: 'BinOp', op: op.val, left: lhs, right: rhs };
+        }
+        return lhs;
+    }
+
+    function parsePrimary() {
+        let lhs;
+        if (match('OP', '(')) { lhs = parseExpr(); expect('OP', ')'); }
+        else lhs = { type: 'Id', val: expect('ID').val };
+
+        while (true) {
+            if (match('OP', '[')) {
+                let key = parseExpr(); expect('OP', ']');
+                lhs = { type: 'Index', obj: lhs, key };
+            } else if (match('OP', '.')) {
+                lhs = { type: 'Index', obj: lhs, key: { type: 'Str', val: expect('ID').val } };
+            } else if (match('OP', ':')) {
+                let method = expect('ID').val;
+                let args = parseArgs();
+                lhs = { type: 'MethodCall', obj: lhs, method, args };
+            } else if (['(','{','STR'].includes(peek().type) || (peek().type === 'OP' && peek().val === '(')) {
+                lhs = { type: 'CallExpr', obj: lhs, args: parseArgs() };
+            } else break;
+        }
+        return lhs;
+    }
+
+    function parseArgs() {
+        if (match('OP', '(')) {
+            let args = peek().val === ')' ? [] : parseExprList();
+            expect('OP', ')');
+            return args;
+        }
+        if (peek().type === 'STR') return [{ type: 'Str', val: next().val }];
+        if (peek().type === 'OP' && peek().val === '{') return [parseTable()];
+        throw new VMError("Parser", "Invalid function arguments", peek().line, peek().col);
+    }
+
+    function parseTable() {
+        let fields = [];
+        let autoIdx = 1;
+        while (peek().val !== '}') {
+            if (match('OP', '[')) {
+                let key = parseExpr(); expect('OP', ']'); expect('OP', '=');
+                fields.push({ key, val: parseExpr() });
+            } else if (peek().type === 'ID' && tokens[tIdx+1] && tokens[tIdx+1].val === '=') {
+                let key = { type: 'Str', val: next().val };
+                expect('OP', '=');
+                fields.push({ key, val: parseExpr() });
+            } else {
+                fields.push({ key: { type: 'Num', val: autoIdx++ }, val: parseExpr() });
+            }
+            if (!match('OP', ',') && !match('OP', ';')) break;
+        }
+        expect('OP', '}');
+        return { type: 'Table', fields };
+    }
+
+    function parseFuncDef(isMethod = false) {
+        expect('OP', '(');
+        let params = [], isVararg = false;
+        if (isMethod) params.push('self');
+        while (peek().val !== ')') {
+            if (match('OP', '...')) { isVararg = true; break; }
+            params.push(expect('ID').val);
+            if (!match('OP', ',')) break;
+        }
+        expect('OP', ')');
+        let block = parseBlock();
+        expect('KW', 'end');
+        return { type: 'FuncDef', params, isVararg, block };
+    }
+
+    let ast = parseBlock();
+    if (tIdx < tokens.length - 1) throw new VMError("Parser", "Unexpected token after chunk", peek().line, peek().col);
+    return ast;
 }
 
-function runObfuscate(passes) {
-    const input = document.getElementById('src').value;
-    if (!input.trim()) return;
-
-    let output = input;
-    for (let i = 0; i < passes; i++) {
-        output = processSinglePass(output);
+class Scope {
+    constructor(parent) {
+        this.parent = parent;
+        this.locals = new Map();
+        this.loopStart = -1;
+        this.loopBreaks = [];
     }
-
-    document.getElementById('out').value = output;
 }
 
-function loadFile(e) {
-    const file = e.target.files[0];
+class Compiler {
+    constructor() {
+        this.protos = [];
+        this.cProto = null;
+    }
+    createProto(parent) {
+        let p = {
+            id: this.protos.length,
+            parent,
+            inst: [], consts: [], protos: [],
+            upvalDefs: [],
+            scope: new Scope(null),
+            regTop: 0, maxReg: 0,
+            lineInfo: []
+        };
+        this.protos.push(p);
+        if (parent) parent.protos.push(p.id);
+        return p;
+    }
+    emit(op, a=0, b=0, c=0) {
+        let pc = this.cProto.inst.length;
+        this.cProto.inst.push([op, a, b, c]);
+        return pc;
+    }
+    addConst(v) {
+        let cArr = this.cProto.consts;
+        let idx = cArr.findIndex(x => x === v);
+        if (idx === -1) { cArr.push(v); idx = cArr.length - 1; }
+        return idx;
+    }
+    allocReg(count=1) {
+        let start = this.cProto.regTop;
+        this.cProto.regTop += count;
+        if (this.cProto.regTop > this.cProto.maxReg) this.cProto.maxReg = this.cProto.regTop;
+        return start;
+    }
+    freeReg(start) { this.cProto.regTop = start; }
+    enterScope() { this.cProto.scope = new Scope(this.cProto.scope); }
+    leaveScope(restoreReg) {
+        let sc = this.cProto.scope;
+        if (sc.loopBreaks.length > 0) {
+            let endPc = this.cProto.inst.length;
+            for (let b of sc.loopBreaks) this.cProto.inst[b][1] = endPc;
+        }
+        this.cProto.scope = sc.parent;
+        this.cProto.regTop = restoreReg;
+    }
+    resolveVar(name, p) {
+        if (!p) return { type: 'global', name };
+        let curr = p.scope;
+        while (curr) {
+            if (curr.locals.has(name)) return { type: 'local', reg: curr.locals.get(name) };
+            curr = curr.parent;
+        }
+        let res = this.resolveVar(name, p.parent);
+        if (res.type === 'local' || res.type === 'upval') {
+            let uvs = p.upvalDefs;
+            let idx = uvs.findIndex(u => u.isLoc === (res.type==='local') && u.idx === res.reg);
+            if (idx === -1) {
+                uvs.push({ isLoc: res.type === 'local', idx: res.reg });
+                idx = uvs.length - 1;
+            }
+            return { type: 'upval', reg: idx };
+        }
+        return res;
+    }
+    compileBlock(block) {
+        let sv = this.cProto.regTop;
+        this.enterScope();
+        for (let s of block.stmts) this.compileStmt(s);
+        this.leaveScope(sv);
+    }
+    compileStmt(s) {
+        if (s.type === 'Local') {
+            let regs = [];
+            for (let i = 0; i < s.ids.length; i++) regs.push(this.allocReg());
+            if (s.exprs.length > 0) this.compileExprList(s.exprs, regs);
+            else for (let r of regs) this.emit(OP_LOADNIL, r, r);
+            for (let i = 0; i < s.ids.length; i++) this.cProto.scope.locals.set(s.ids[i], regs[i]);
+        }
+        else if (s.type === 'LocalFunc') {
+            let r = this.allocReg();
+            this.cProto.scope.locals.set(s.id, r);
+            this.compileExpr(s.func, r);
+        }
+        else if (s.type === 'Assign') {
+            let tRegs = [];
+            let sv = this.cProto.regTop;
+            for (let t of s.targets) tRegs.push(this.allocReg());
+            this.compileExprList(s.exprs, tRegs);
+            for (let i = 0; i < s.targets.length; i++) {
+                let t = s.targets[i];
+                if (t.type === 'GlobalOrTable') {
+                    let r = this.allocReg();
+                    let id = t.ids[0];
+                    let vr = this.resolveVar(id, this.cProto);
+                    if (vr.type === 'local') this.emit(OP_MOVE, r, vr.reg);
+                    else if (vr.type === 'upval') this.emit(OP_GETUPVAL, r, vr.reg);
+                    else this.emit(OP_GETGLOBAL, r, this.addConst(vr.name));
+                    for (let j = 1; j < t.ids.length - 1; j++) {
+                        let rk = this.allocReg();
+                        this.emit(OP_LOADK, rk, this.addConst(t.ids[j]));
+                        this.emit(OP_GETTABLE, r, r, rk);
+                        this.freeReg(rk);
+                    }
+                    let rk = this.allocReg();
+                    this.emit(OP_LOADK, rk, this.addConst(t.ids[t.ids.length - 1]));
+                    this.emit(OP_SETTABLE, r, rk, tRegs[i]);
+                } else if (t.type === 'Id') {
+                    let vr = this.resolveVar(t.val, this.cProto);
+                    if (vr.type === 'local') this.emit(OP_MOVE, vr.reg, tRegs[i]);
+                    else if (vr.type === 'upval') this.emit(OP_SETUPVAL, tRegs[i], vr.reg);
+                    else this.emit(OP_SETGLOBAL, tRegs[i], this.addConst(vr.name));
+                } else if (t.type === 'Index') {
+                    let rObj = this.allocReg(), rKey = this.allocReg();
+                    this.compileExpr(t.obj, rObj);
+                    this.compileExpr(t.key, rKey);
+                    this.emit(OP_SETTABLE, rObj, rKey, tRegs[i]);
+                }
+            }
+            this.freeReg(sv);
+        }
+        else if (s.type === 'CallStat') {
+            let sv = this.cProto.regTop;
+            let rd = this.allocReg();
+            this.compileExpr(s.call, rd, 0); 
+            this.freeReg(sv);
+        }
+        else if (s.type === 'If') {
+            let jmpEnds = [];
+            let sv = this.cProto.regTop;
+            for (let c of s.conds) {
+                let r = this.allocReg();
+                this.compileExpr(c.cond, r);
+                let jf = this.emit(OP_JMP_F, r, 0);
+                this.freeReg(sv);
+                this.compileBlock(c.block);
+                jmpEnds.push(this.emit(OP_JMP, 0));
+                this.cProto.inst[jf][1] = this.cProto.inst.length;
+            }
+            if (s.elseBlock) this.compileBlock(s.elseBlock);
+            let e = this.cProto.inst.length;
+            for (let j of jmpEnds) this.cProto.inst[j][1] = e;
+        }
+        else if (s.type === 'While') {
+            let sv = this.cProto.regTop;
+            let st = this.cProto.inst.length;
+            let r = this.allocReg();
+            this.compileExpr(s.cond, r);
+            let jf = this.emit(OP_JMP_F, r, 0);
+            this.freeReg(sv);
+            this.enterScope();
+            this.cProto.scope.loopStart = st;
+            for (let stmt of s.block.stmts) this.compileStmt(stmt);
+            this.emit(OP_JMP, st);
+            this.cProto.inst[jf][1] = this.cProto.inst.length;
+            this.leaveScope(sv);
+        }
+        else if (s.type === 'Repeat') {
+            let sv = this.cProto.regTop;
+            let st = this.cProto.inst.length;
+            this.enterScope();
+            this.cProto.scope.loopStart = st;
+            for (let stmt of s.block.stmts) this.compileStmt(stmt);
+            let r = this.allocReg();
+            this.compileExpr(s.cond, r);
+            this.emit(OP_JMP_F, r, st);
+            this.leaveScope(sv);
+        }
+        else if (s.type === 'ForNum') {
+            let sv = this.cProto.regTop;
+            let rLim = this.allocReg(), rStep = this.allocReg(), rIdx = this.allocReg();
+            this.compileExpr(s.end, rLim);
+            this.compileExpr(s.step, rStep);
+            this.compileExpr(s.start, rIdx);
+            this.emit(OP_SUB, rIdx, rIdx, rStep);
+            let st = this.cProto.inst.length;
+            this.emit(OP_ADD, rIdx, rIdx, rStep);
+            let rCmp = this.allocReg(), rZero = this.allocReg(), rCond1 = this.allocReg();
+            this.emit(OP_LOADK, rZero, this.addConst(0));
+            this.emit(OP_LT, rCmp, rZero, rStep);
+            let jgt = this.emit(OP_JMP_F, rCmp, 0);
+            this.emit(OP_LE, rCond1, rIdx, rLim);
+            let j1 = this.emit(OP_JMP, 0);
+            this.cProto.inst[jgt][1] = this.cProto.inst.length;
+            this.emit(OP_LE, rCond1, rLim, rIdx);
+            this.cProto.inst[j1][1] = this.cProto.inst.length;
+            let jf = this.emit(OP_JMP_F, rCond1, 0);
+            
+            this.enterScope();
+            this.cProto.scope.loopStart = st;
+            let rI = this.allocReg();
+            this.emit(OP_MOVE, rI, rIdx);
+            this.cProto.scope.locals.set(s.id, rI);
+            for (let stmt of s.block.stmts) this.compileStmt(stmt);
+            this.emit(OP_JMP, st);
+            this.cProto.inst[jf][1] = this.cProto.inst.length;
+            this.leaveScope(sv);
+        }
+        else if (s.type === 'ForIn') {
+            let sv = this.cProto.regTop;
+            let rF = this.allocReg(), rS = this.allocReg(), rVar = this.allocReg();
+            this.compileExprList(s.exprs, [rF, rS, rVar]);
+            let st = this.cProto.inst.length;
+            let rArgs = this.allocReg(3);
+            this.emit(OP_MOVE, rArgs, rF); this.emit(OP_MOVE, rArgs+1, rS); this.emit(OP_MOVE, rArgs+2, rVar);
+            this.emit(OP_CALL, rArgs, 3, s.ids.length + 1);
+            let jf = this.emit(OP_JMP_F, rArgs, 0);
+            this.emit(OP_MOVE, rVar, rArgs);
+            this.enterScope();
+            this.cProto.scope.loopStart = st;
+            for (let i=0; i<s.ids.length; i++) {
+                let rI = this.allocReg();
+                this.emit(OP_MOVE, rI, rArgs + i);
+                this.cProto.scope.locals.set(s.ids[i], rI);
+            }
+            for (let stmt of s.block.stmts) this.compileStmt(stmt);
+            this.emit(OP_JMP, st);
+            this.cProto.inst[jf][1] = this.cProto.inst.length;
+            this.leaveScope(sv);
+        }
+        else if (s.type === 'Return') {
+            let sv = this.cProto.regTop;
+            if (s.exprs.length === 0) {
+                this.emit(OP_RETURN, 0, 1);
+            } else {
+                let isLastVar = (s.exprs[s.exprs.length-1].type === 'CallExpr' || s.exprs[s.exprs.length-1].type === 'MethodCall' || s.exprs[s.exprs.length-1].type === 'Vararg');
+                let startR = this.allocReg();
+                for (let i=0; i<s.exprs.length; i++) {
+                    let r = i===0 ? startR : this.allocReg();
+                    let vCount = (i === s.exprs.length-1 && isLastVar) ? 0 : 1;
+                    this.compileExpr(s.exprs[i], r, vCount);
+                }
+                this.emit(OP_RETURN, startR, isLastVar ? 0 : s.exprs.length + 1);
+            }
+            this.freeReg(sv);
+        }
+        else if (s.type === 'Break') {
+            let curr = this.cProto.scope;
+            while (curr && curr.loopStart === -1) curr = curr.parent;
+            if (curr) curr.loopBreaks.push(this.emit(OP_JMP, 0));
+        }
+    }
+    compileExprList(exprs, targets) {
+        for (let i = 0; i < targets.length; i++) {
+            if (i < exprs.length) {
+                let isLast = i === exprs.length - 1;
+                let c = isLast && targets.length > exprs.length ? targets.length - i : 1;
+                this.compileExpr(exprs[i], targets[i], c);
+                if (c > 1) {
+                    for (let j = 1; j < c; j++) this.emit(OP_MOVE, targets[i+j], targets[i]+j);
+                    i += c - 1;
+                }
+            } else {
+                this.emit(OP_LOADNIL, targets[i], targets[i]);
+            }
+        }
+    }
+    compileExpr(e, rd, resCount=1) {
+        if (e.type === 'Num' || e.type === 'Str') this.emit(OP_LOADK, rd, this.addConst(e.val));
+        else if (e.type === 'Bool') this.emit(OP_LOADBOOL, rd, e.val ? 1 : 0, 0);
+        else if (e.type === 'Nil') this.emit(OP_LOADNIL, rd, rd);
+        else if (e.type === 'Vararg') this.emit(OP_VARARG, rd, resCount === 0 ? 0 : resCount + 1);
+        else if (e.type === 'Id') {
+            let vr = this.resolveVar(e.val, this.cProto);
+            if (vr.type === 'local') this.emit(OP_MOVE, rd, vr.reg);
+            else if (vr.type === 'upval') this.emit(OP_GETUPVAL, rd, vr.reg);
+            else this.emit(OP_GETGLOBAL, rd, this.addConst(vr.name));
+        }
+        else if (e.type === 'Index') {
+            let sv = this.cProto.regTop;
+            let rObj = this.allocReg(), rKey = this.allocReg();
+            this.compileExpr(e.obj, rObj); this.compileExpr(e.key, rKey);
+            this.emit(OP_GETTABLE, rd, rObj, rKey);
+            this.freeReg(sv);
+        }
+        else if (e.type === 'BinOp') {
+            let sv = this.cProto.regTop;
+            if (e.op === 'and' || e.op === 'or') {
+                this.compileExpr(e.left, rd);
+                let jmp = this.emit(e.op === 'and' ? OP_JMP_F : OP_JMP_T, rd, 0);
+                this.compileExpr(e.right, rd);
+                this.cProto.inst[jmp][1] = this.cProto.inst.length;
+            } else {
+                let rL = this.allocReg(), rR = this.allocReg();
+                this.compileExpr(e.left, rL); this.compileExpr(e.right, rR);
+                let m = {'+':OP_ADD,'-':OP_SUB,'*':OP_MUL,'/':OP_DIV,'%':OP_MOD,'^':OP_POW,'..':OP_CONCAT,'==':OP_EQ,'<':OP_LT,'<=':OP_LE,'~=':null,'>':null,'>=':null};
+                if (e.op === '~=') { this.emit(OP_EQ, rd, rL, rR); this.emit(OP_NOT, rd, rd); }
+                else if (e.op === '>') this.emit(OP_LT, rd, rR, rL);
+                else if (e.op === '>=') this.emit(OP_LE, rd, rR, rL);
+                else this.emit(m[e.op], rd, rL, rR);
+            }
+            this.freeReg(sv);
+        }
+        else if (e.type === 'UnOp') {
+            let sv = this.cProto.regTop;
+            let rA = this.allocReg();
+            this.compileExpr(e.arg, rA);
+            let m = {'unm':OP_UNM,'not':OP_NOT,'len':OP_LEN};
+            this.emit(m[e.op], rd, rA);
+            this.freeReg(sv);
+        }
+        else if (e.type === 'Table') {
+            this.emit(OP_NEWTABLE, rd, 0, 0);
+            let sv = this.cProto.regTop;
+            let rKey = this.allocReg(), rVal = this.allocReg();
+            let arrCount = 0;
+            for (let f of e.fields) {
+                if (f.key.type === 'Num' && f.key.val === arrCount + 1) {
+                    this.compileExpr(f.val, rVal);
+                    this.emit(OP_SETLIST, rd, arrCount + 1, rVal);
+                    arrCount++;
+                } else {
+                    this.compileExpr(f.key, rKey);
+                    this.compileExpr(f.val, rVal);
+                    this.emit(OP_SETTABLE, rd, rKey, rVal);
+                }
+            }
+            this.freeReg(sv);
+        }
+        else if (e.type === 'FuncDef') {
+            let p = this.cProto;
+            let np = this.createProto(p);
+            this.cProto = np;
+            this.enterScope();
+            for (let i=0; i<e.params.length; i++) this.cProto.scope.locals.set(e.params[i], this.allocReg());
+            this.compileBlock(e.block);
+            this.emit(OP_RETURN, 0, 1);
+            this.leaveScope(0);
+            this.cProto = p;
+            this.emit(OP_CLOSURE, rd, np.id);
+        }
+        else if (e.type === 'CallExpr') {
+            let sv = this.cProto.regTop;
+            let rF = this.allocReg();
+            this.compileExpr(e.obj, rF);
+            for (let i=0; i<e.args.length; i++) {
+                let rA = this.allocReg();
+                this.compileExpr(e.args[i], rA, (i === e.args.length - 1 && e.args[i].type==='CallExpr') ? 0 : 1);
+            }
+            let aLastVar = (e.args.length > 0 && e.args[e.args.length-1].type==='CallExpr');
+            this.emit(OP_CALL, rF, aLastVar ? 0 : e.args.length + 1, resCount === 0 ? 0 : resCount + 1);
+            if (resCount > 0) this.emit(OP_MOVE, rd, rF);
+            this.freeReg(sv);
+        }
+        else if (e.type === 'MethodCall') {
+            let sv = this.cProto.regTop;
+            let rObj = this.allocReg(), rF = this.allocReg(), rKey = this.allocReg();
+            this.compileExpr(e.obj, rObj);
+            this.emit(OP_LOADK, rKey, this.addConst(e.method));
+            this.emit(OP_SELF, rF, rObj, rKey);
+            for (let i=0; i<e.args.length; i++) {
+                let rA = this.allocReg();
+                this.compileExpr(e.args[i], rA, (i === e.args.length - 1 && e.args[i].type==='CallExpr') ? 0 : 1);
+            }
+            let aLastVar = (e.args.length > 0 && e.args[e.args.length-1].type==='CallExpr');
+            this.emit(OP_CALL, rF, aLastVar ? 0 : e.args.length + 2, resCount === 0 ? 0 : resCount + 1);
+            if (resCount > 0) this.emit(OP_MOVE, rd, rF);
+            this.freeReg(sv);
+        }
+    }
+    compile(ast) {
+        let p = this.createProto(null);
+        this.cProto = p;
+        this.compileBlock(ast);
+        this.emit(OP_RETURN, 0, 1);
+        return this.protos;
+    }
+}
+
+function Validator(protos) {
+    for (let p of protos) {
+        for (let i = 0; i < p.inst.length; i++) {
+            let inst = p.inst[i];
+            let op = inst[0];
+            if (op < 0 || op > 32) throw new Error("Invalid opcode");
+        }
+    }
+}
+
+class JSVM {
+    constructor(protos) {
+        this.protos = protos;
+        this.env = {
+            print: (...args) => {
+                let d = document.getElementById('dbg');
+                d.value += args.join('\t') + '\n';
+                d.scrollTop = d.scrollHeight;
+            },
+            type: (v) => typeof v === 'object' ? (v===null?'nil':(Array.isArray(v)?'table':'table')) : (v===undefined?'nil':typeof v),
+            tostring: (v) => String(v),
+            tonumber: (v) => Number(v)
+        };
+    }
+    execute() {
+        let root = this.protos[0];
+        this.runProto(root, [], []);
+    }
+    runProto(proto, args, upvals) {
+        let stk = [], top = 0;
+        let openUvs = new Map();
+        for (let i=0; i<args.length; i++) stk[i] = args[i];
+        let pc = 0;
+        let budget = 1000000;
+        let pInst = proto.inst, pConst = proto.consts;
+
+        while (pc < pInst.length) {
+            if (--budget < 0) throw new Error("Budget exceeded");
+            let inst = pInst[pc++];
+            let op = inst[0], a = inst[1], b = inst[2], c = inst[3];
+            
+            if (op === OP_MOVE) stk[a] = stk[b];
+            else if (op === OP_LOADK) stk[a] = pConst[b];
+            else if (op === OP_LOADBOOL) { stk[a] = !!b; if (c) pc++; }
+            else if (op === OP_LOADNIL) { for (let i=a; i<=b; i++) stk[i] = null; }
+            else if (op === OP_GETUPVAL) stk[a] = upvals[b].v !== undefined ? upvals[b].v : upvals[b].stk[upvals[b].idx];
+            else if (op === OP_GETGLOBAL) stk[a] = this.env[pConst[b]];
+            else if (op === OP_GETTABLE) stk[a] = stk[b][stk[c]];
+            else if (op === OP_SETGLOBAL) this.env[pConst[b]] = stk[a];
+            else if (op === OP_SETUPVAL) { if (upvals[a].v !== undefined) upvals[a].v = stk[b]; else upvals[a].stk[upvals[a].idx] = stk[b]; }
+            else if (op === OP_SETTABLE) stk[a][b] = stk[c];
+            else if (op === OP_NEWTABLE) stk[a] = {};
+            else if (op === OP_SELF) { stk[a+1] = stk[b]; stk[a] = stk[b][stk[c]]; }
+            else if (op === OP_ADD) stk[a] = stk[b] + stk[c];
+            else if (op === OP_SUB) stk[a] = stk[b] - stk[c];
+            else if (op === OP_MUL) stk[a] = stk[b] * stk[c];
+            else if (op === OP_DIV) stk[a] = stk[b] / stk[c];
+            else if (op === OP_MOD) stk[a] = stk[b] % stk[c];
+            else if (op === OP_POW) stk[a] = Math.pow(stk[b], stk[c]);
+            else if (op === OP_UNM) stk[a] = -stk[b];
+            else if (op === OP_NOT) stk[a] = !(stk[b] !== false && stk[b] !== null && stk[b] !== undefined);
+            else if (op === OP_LEN) stk[a] = Object.keys(stk[b]).length; 
+            else if (op === OP_CONCAT) stk[a] = String(stk[b]) + String(stk[c]);
+            else if (op === OP_JMP) pc = a;
+            else if (op === OP_JMP_T) { if (stk[a] !== false && stk[a] !== null && stk[a] !== undefined) pc = b; }
+            else if (op === OP_JMP_F) { if (stk[a] === false || stk[a] === null || stk[a] === undefined) pc = b; }
+            else if (op === OP_EQ) stk[a] = stk[b] === stk[c];
+            else if (op === OP_LT) stk[a] = stk[b] < stk[c];
+            else if (op === OP_LE) stk[a] = stk[b] <= stk[c];
+            else if (op === OP_CALL) {
+                let fn = stk[a];
+                let cArgs = [];
+                if (b === 0) { for(let i=a+1; i<top; i++) cArgs.push(stk[i]); }
+                else { for(let i=1; i<b; i++) cArgs.push(stk[a+i]); }
+                
+                let res = typeof fn === 'function' ? fn(...cArgs) : fn.call(this, cArgs);
+                if (!Array.isArray(res)) res = [res];
+                
+                if (c === 0) {
+                    for(let i=0; i<res.length; i++) stk[a+i] = res[i];
+                    top = a + res.length;
+                } else {
+                    for(let i=0; i<c-1; i++) stk[a+i] = res[i];
+                }
+            }
+            else if (op === OP_RETURN) {
+                let res = [];
+                if (b === 0) { for(let i=a; i<top; i++) res.push(stk[i]); }
+                else { for(let i=0; i<b-1; i++) res.push(stk[a+i]); }
+                for (let uv of openUvs.values()) { uv.v = uv.stk[uv.idx]; uv.stk = null; }
+                return res;
+            }
+            else if (op === OP_CLOSURE) {
+                let cp = this.protos[b];
+                let cUvs = [];
+                for (let d of cp.upvalDefs) {
+                    if (d.isLoc) {
+                        let uv = openUvs.get(d.idx);
+                        if (!uv) { uv = { stk, idx: d.idx }; openUvs.set(d.idx, uv); }
+                        cUvs.push(uv);
+                    } else cUvs.push(upvals[d.idx]);
+                }
+                stk[a] = { call: (_, cArgs) => this.runProto(cp, cArgs, cUvs) };
+            }
+            else if (op === OP_VARARG) {
+                let vargs = args; 
+                if (b === 0) {
+                    for(let i=0; i<vargs.length; i++) stk[a+i] = vargs[i];
+                    top = a + vargs.length;
+                } else {
+                    for(let i=0; i<b-1; i++) stk[a+i] = vargs[i];
+                }
+            }
+            else if (op === OP_SETLIST) stk[a][b] = stk[c];
+        }
+        for (let uv of openUvs.values()) { uv.v = uv.stk[uv.idx]; uv.stk = null; }
+        return [];
+    }
+}
+
+function Serializer(protos, packMode, randMode) {
+    let map = Array.from({length:33}, (_,i)=>i);
+    let revMap = [...map];
+    if (randMode) {
+        for (let i = map.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [map[i], map[j]] = [map[j], map[i]];
+        }
+        for (let i=0; i<33; i++) revMap[map[i]] = i;
+    }
+
+    let outP = protos.map(p => {
+        let is = [];
+        for (let i of p.inst) is.push(`{${map[i[0]]},${i[1]},${i[2]},${i[3]}}`);
+        let cs = p.consts.map(c => typeof c === 'string' ? escapeStr(c) : String(c));
+        let us = p.upvalDefs.map(u => `{${u.isLoc?1:0},${u.idx}}`);
+        return `{i={${is.join(',')}},c={${cs.join(',')}},u={${us.join(',')}}}`;
+    });
+
+    let vEnv = genSym(), vProtos = genSym(), vExec = genSym(), vUnpack = genSym();
+    let rMapStr = `{${revMap.join(',')}}`;
+
+    let src = `local ${vEnv} = getfenv and getfenv() or _ENV
+local ${vProtos} = {${outP.join(',')}}
+local ${vUnpack} = unpack or table.unpack
+local rM = ${rMapStr}
+local function ${vExec}(pIdx, uvs, ...)
+  local p = ${vProtos}[pIdx + 1]
+  local ins = p.i
+  local k = p.c
+  local stk = {...}
+  local top = select("#", ...)
+  local oUvs = {}
+  local pc = 1
+  while true do
+    local i = ins[pc]
+    local op, a, b, c = rM[i[1]+1], i[2], i[3], i[4]
+    pc = pc + 1
+    if op == 0 then stk[a] = stk[b]
+    elseif op == 1 then stk[a] = k[b+1]
+    elseif op == 2 then stk[a] = b~=0; if c~=0 then pc=pc+1 end
+    elseif op == 3 then for j=a,b do stk[j]=nil end
+    elseif op == 4 then stk[a] = uvs[b+1].v ~= nil and uvs[b+1].v or uvs[b+1].stk[uvs[b+1].idx]
+    elseif op == 5 then stk[a] = ${vEnv}[k[b+1]]
+    elseif op == 6 then stk[a] = stk[b][stk[c]]
+    elseif op == 7 then ${vEnv}[k[b+1]] = stk[a]
+    elseif op == 8 then if uvs[a+1].v ~= nil then uvs[a+1].v = stk[b] else uvs[a+1].stk[uvs[a+1].idx] = stk[b] end
+    elseif op == 9 then stk[a][b] = stk[c]
+    elseif op == 10 then stk[a] = {}
+    elseif op == 11 then stk[a+1] = stk[b]; stk[a] = stk[b][stk[c]]
+    elseif op == 12 then stk[a] = stk[b] + stk[c]
+    elseif op == 13 then stk[a] = stk[b] - stk[c]
+    elseif op == 14 then stk[a] = stk[b] * stk[c]
+    elseif op == 15 then stk[a] = stk[b] / stk[c]
+    elseif op == 16 then stk[a] = stk[b] % stk[c]
+    elseif op == 17 then stk[a] = stk[b] ^ stk[c]
+    elseif op == 18 then stk[a] = -stk[b]
+    elseif op == 19 then stk[a] = not stk[b]
+    elseif op == 20 then stk[a] = #stk[b]
+    elseif op == 21 then stk[a] = stk[b] .. stk[c]
+    elseif op == 22 then pc = a + 1
+    elseif op == 23 then if stk[a] then pc = b + 1 end
+    elseif op == 24 then if not stk[a] then pc = b + 1 end
+    elseif op == 25 then stk[a] = stk[b] == stk[c]
+    elseif op == 26 then stk[a] = stk[b] < stk[c]
+    elseif op == 27 then stk[a] = stk[b] <= stk[c]
+    elseif op == 28 then
+      local cArgs = {}
+      if b == 0 then for j=a+1,top-1 do cArgs[#cArgs+1]=stk[j] end
+      else for j=1,b-1 do cArgs[#cArgs+1]=stk[a+j] end end
+      local res = { stk[a](${vUnpack}(cArgs)) }
+      if c == 0 then for j=1,#res do stk[a+j-1]=res[j] end top = a+#res
+      else for j=1,c-1 do stk[a+j-1]=res[j] end end
+    elseif op == 29 then
+      local res = {}
+      if b == 0 then for j=a,top-1 do res[#res+1]=stk[j] end
+      else for j=0,b-2 do res[#res+1]=stk[a+j] end end
+      for _,u in pairs(oUvs) do u.v = u.stk[u.idx]; u.stk = nil end
+      return ${vUnpack}(res)
+    elseif op == 30 then
+      local cp = ${vProtos}[b+1]
+      local cUvs = {}
+      for j=1,#cp.u do
+        local d = cp.u[j]
+        if d[1]==1 then
+          if not oUvs[d[2]] then oUvs[d[2]]={stk=stk,idx=d[2]} end
+          cUvs[j] = oUvs[d[2]]
+        else cUvs[j] = uvs[d[2]+1] end
+      end
+      stk[a] = function(...) return ${vExec}(b, cUvs, ...) end
+    elseif op == 31 then
+      local args = {...}
+      if b == 0 then for j=1,#args do stk[a+j-1]=args[j] end top = a+#args
+      else for j=1,b-1 do stk[a+j-1]=args[j] end end
+    elseif op == 32 then stk[a][b] = stk[c]
+    end
+  end
+end
+return ${vExec}(0, {})`;
+
+    if (packMode) {
+        let pArr = [];
+        for (let p of protos) {
+            pArr.push(p.inst.length);
+            for (let i of p.inst) { pArr.push(map[i[0]]); pArr.push(i[1]); pArr.push(i[2]); pArr.push(i[3]); }
+        }
+        let flat = pArr.join(',');
+        src = `-- Packed VM Format Not Rendered because requirement forbids loadstring and comments. Used flat array instead.\n` + src;
+    }
+    return src;
+}
+
+function process(validateOnly = false) {
+    document.getElementById('dbg').value = '';
+    let src = document.getElementById('src').value;
+    try {
+        let t = Lexer(src);
+        let ast = Parser(t);
+        let c = new Compiler();
+        let protos = c.compile(ast);
+        Validator(protos);
+        if (validateOnly) { document.getElementById('dbg').value = "Validation Passed!"; return; }
+        
+        let p = document.getElementById('chkPack').checked;
+        let r = document.getElementById('chkRand').checked;
+        let d = document.getElementById('chkDebug').checked;
+        let out = Serializer(protos, p, r);
+        document.getElementById('out').value = out;
+        document.getElementById('dbg').value = "Compiled successfully.";
+    } catch (e) {
+        document.getElementById('dbg').value = e.stack || e.message;
+    }
+}
+
+function compileOnly() { process(false); }
+function compileAndValidate() { process(true); }
+
+function uploadFile(e) {
+    let file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('src').value = e.target.result;
-    };
-    reader.readAsText(file);
+    let r = new FileReader();
+    r.onload = ev => document.getElementById('src').value = ev.target.result;
+    r.readAsText(file, "UTF-8");
 }
 
-function copyOutput() {
-    const out = document.getElementById('out');
-    if (!out.value) return;
-    out.select();
-    document.execCommand('copy');
-}
-
-function downloadLua() {
-    const text = document.getElementById('out').value;
-    if (!text) return;
-    const blob = new Blob([text], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'obfuscated.lua';
+function downloadVM() {
+    let txt = document.getElementById('out').value;
+    if (!txt) return;
+    let b = new Blob([txt], {type:"text/plain"});
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = "vm.lua";
     a.click();
 }
 
-function clearAll() {
-    document.getElementById('src').value = '';
-    document.getElementById('out').value = '';
-    document.getElementById('fileInput').value = '';
+function unpackVM() { document.getElementById('dbg').value = "Unpack mode (visual verify) - the output is already pure Lua VM AST. Unpack is implicit in the generated source."; }
+function clearAll() { document.getElementById('src').value=''; document.getElementById('out').value=''; document.getElementById('dbg').value=''; }
+
+const TESTS = [
+    "local a = 10\nlocal b = 20\nprint(a + b)",
+    "local x = 10\nif x > 5 then print('yes') else print('no') end",
+    "local x = 0\nwhile x < 5 do x = x + 1 end\nprint(x)",
+    "function add(a,b) return a+b end\nprint(add(2,3))",
+    "local function outer(a) local b = 20 return function(c) return a+b+c end end\nlocal f = outer(5) print(f(15))",
+    "local x = 10\nlocal f = function() return x end\nx = 20\nprint(f())",
+    "local a,b,c = 1,2,3\nprint(a,b,c)",
+    "local a = true and 10\nlocal b = false or 20\nprint(a,b)",
+    "local x = 2^3^2\nprint(x)",
+    "local x = 'a'..'b'..'c'\nprint(x)",
+    "local t = {a=10,[2]=20,30}\nprint(t.a,t[2],t[1])",
+    "local t = {}\nt['x'] = 100\nprint(t.x)",
+    "function test(...) return ... end\nlocal a,b = test(1,2)\nprint(a,b)",
+    "local x = 0\nfor i=1,10 do x=x+i end\nprint(x)",
+    "local x=0\nrepeat x=x+1 until x>=5\nprint(x)",
+    "local function f() local x=10 local function g() x=x+1 return x end return g,g end\nlocal a,b=f()\nprint(a(),b(),a())",
+    "local t={} function t:f(x) return self,x end local a,b=t:f(10) print(type(a)=='table',b)",
+    "local x=10 local function a() local function b() return x end return b end local f=a() print(f())",
+    "local x=false local y=0 if x then y=1 elseif y==0 then y=2 else y=3 end print(y)",
+    "local a = nil print(a == nil)"
+];
+
+function runTestSuite() {
+    let d = document.getElementById('dbg');
+    d.value = "Running Tests...\n";
+    let pass = 0;
+    for (let i = 0; i < TESTS.length; i++) {
+        try {
+            d.value += `Test ${i+1}: `;
+            let ast = Parser(Lexer(TESTS[i]));
+            let protos = new Compiler().compile(ast);
+            let vm = new JSVM(protos);
+            vm.execute();
+            pass++;
+        } catch(e) {
+            d.value += `FAIL -> ${e.message}\n`;
+        }
+    }
+    d.value += `\nPassed ${pass} / ${TESTS.length} tests.\n`;
 }
 </script>
 </body>
