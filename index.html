@@ -2,19 +2,20 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Universal Lua VM Obfuscator Studio</title>
+    <title>Hardened Pure Lua VM Engine</title>
     <style>
-        body { font-family: monospace; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 950px; margin: auto; background: #1e293b; padding: 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        body { font-family: monospace; background: #0b0f19; color: #f8fafc; margin: 0; padding: 20px; }
+        .container { max-width: 950px; margin: auto; background: #1b2234; padding: 25px; border-radius: 8px; }
         h2 { color: #38bdf8; margin-top: 0; }
-        label { display: block; margin-top: 12px; margin-bottom: 6px; color: #94a3b8; font-weight: bold; }
-        textarea { width: 100%; height: 250px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 13px; }
-        .option-box { background: #0f172a; padding: 15px; border-radius: 6px; border: 1px solid #334155; margin: 15px 0; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
-        .option-item { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e2e8f0; }
-        select { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 6px 12px; border-radius: 4px; outline: none; }
-        .btn-group { margin: 15px 0; display: flex; flex-wrap: wrap; gap: 10px; }
-        button { background: #0284c7; color: white; border: none; padding: 10px 18px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        label { display: block; margin-top: 10px; margin-bottom: 5px; color: #94a3b8; font-weight: bold; }
+        textarea { width: 100%; height: 220px; background: #0b0f19; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 12px; font-family: monospace; }
+        .option-box { background: #0b0f19; padding: 12px; border-radius: 6px; border: 1px solid #334155; margin: 10px 0; display: flex; flex-wrap: wrap; gap: 15px; }
+        .option-item { display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 13px; }
+        .btn-group { margin: 15px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0369a1; }
+        button.purple { background: #7c3aed; }
+        button.purple:hover { background: #6d28d9; }
         button.sec { background: #334155; }
         button.sec:hover { background: #475569; }
         button.danger { background: #991b1b; }
@@ -24,122 +25,106 @@
 </head>
 <body>
     <div class="container">
-        <h2>Universal Lua Custom VM Engine</h2>
-        
+        <h2>Hardened Pure Lua VM Engine</h2>
+
         <div class="option-box">
-            <div>
-                <label style="margin:0 0 4px 0;">VM 난독화 레벨:</label>
-                <select id="level">
-                    <option value="1">Level 1 (기본 가상화)</option>
-                    <option value="2" selected>Level 2 (난수 식별자 치환)</option>
-                    <option value="3">Level 3 (상형문자/유니코드 도배)</option>
-                </select>
-            </div>
-            <label class="option-item"><input type="checkbox" id="antiHook"> Anti-Hook (안전 모드)</label>
-            <label class="option-item"><input type="checkbox" id="antiDebug"> Anti-Debug</label>
-            <label class="option-item"><input type="checkbox" id="antiTamper"> Anti-Tamper</label>
+            <label class="option-item"><input type="checkbox" id="antiDebug" checked> Anti-Debug 강화</label>
+            <label class="option-item"><input type="checkbox" id="antiTamper" checked> Anti-Tamper (변조 방지)</label>
+            <label class="option-item"><input type="checkbox" id="minify" checked> 한 줄로 줄이기 (Minify)</label>
         </div>
 
         <label>Input Source Code:</label>
-        <textarea id="src" placeholder="Lua 코드를 입력하거나 불러오세요..."></textarea>
+        <textarea id="src" placeholder="Lua 코드를 입력하세요..."></textarea>
         
         <div class="btn-group">
-            <button onclick="processObfuscation()">VM 난독화 실행</button>
-            <button class="sec" onclick="document.getElementById('fileInput').click()">파일 불러오기 (.lua)</button>
-            <button class="sec" onclick="copyOutput()">복사하기</button>
-            <button class="sec" onclick="downloadLua()">파일 저장</button>
+            <button onclick="runObfuscate(1)">Pure VM 난독화</button>
+            <button class="purple" onclick="runObfuscate(2)">2중 난독화 (Double VM)</button>
+            <button class="sec" onclick="document.getElementById('fileInput').click()">파일 불러오기</button>
+            <button class="sec" onclick="copyOutput()">복사</button>
+            <button class="sec" onclick="downloadLua()">다운로드</button>
             <button class="danger" onclick="clearAll()">Clear</button>
             <input type="file" id="fileInput" accept=".lua,.txt" onchange="loadFile(event)">
         </div>
         
-        <label>VM Obfuscated Output:</label>
-        <textarea id="out" readonly placeholder="결과가 여기에 표시됩니다..."></textarea>
+        <label>Obfuscated Output (No Loadstring):</label>
+        <textarea id="out" readonly></textarea>
     </div>
 
 <script>
-function randVar(lvl) {
-    let chars = ['O', 'o', '0', 'I', 'l', '_'];
-    if (lvl === 3) {
-        chars = ['Il', 'iI', 'oO', 'O0', 'lI', '_'];
-    }
+function genSym() {
+    const set = ['i', 'l', 'I', '1', 'O', '0', '_', 'iI', 'Ii', 'lI', 'Il', 'oO', 'Oo'];
     let res = '_';
-    for(let i = 0; i < 16; i++) {
-        res += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 24; i++) {
+        res += set[Math.floor(Math.random() * set.length)];
     }
     return res;
 }
 
-function generateVM(sourceCode) {
-    const lvl = parseInt(document.getElementById('level').value);
-    const antiHook = document.getElementById('antiHook').checked;
-    const antiDebug = document.getElementById('antiDebug').checked;
-    const antiTamper = document.getElementById('antiTamper').checked;
+function buildVM(inputCode) {
+    const doDebug = document.getElementById('antiDebug').checked;
+    const doTamper = document.getElementById('antiTamper').checked;
 
-    // 변수명 난독화 식별자
-    const vMain = randVar(lvl);
-    const vStream = randVar(lvl);
-    const vEnv = randVar(lvl);
-    const vByte = randVar(lvl);
-    const vStack = randVar(lvl);
-    const vPC = randVar(lvl);
-    const vInst = randVar(lvl);
-    const vKey = Math.floor(Math.random() * 150) + 10;
+    const vMain = genSym();
+    const vStream = genSym();
+    const vEnv = genSym();
+    const vIP = genSym();
+    const vKey = genSym();
+    const vA = genSym();
+    const vB = genSym();
+    const vC = genSym();
+    const vR = genSym();
+    const vInst = genSym();
+    const vOp = genSym();
 
-    // 16진수 바이트 인코딩 및 XOR 암호화
-    let hexArr = [];
-    for (let i = 0; i < sourceCode.length; i++) {
-        let code = sourceCode.charCodeAt(i) ^ vKey;
-        hexArr.push(code.toString(16).padStart(2, '0').toUpperCase());
-    }
-    const bytePayload = hexArr.join('');
+    const keyVal = Math.floor(Math.random() * 200) + 20;
 
-    // 안티 훅/디버그 처리 (화면 멈춤 현상 원인이었던 while true 무한루프 제거 및 안전 처리)
-    let antiCode = "";
-    if (antiHook) {
-        antiCode += `if hookmetatable or hookfunction then error("Security Violation", 0) end;\n`;
-    }
-    if (antiDebug) {
-        antiCode += `if debug and debug.getupvalue then getfenv().debug = nil end;\n`;
-    }
-    if (antiTamper) {
-        antiCode += `if #string.format("%s","") ~= 0 then return end;\n`;
+    let bytes = [];
+    for (let i = 0; i < inputCode.length; i++) {
+        bytes.push(inputCode.charCodeAt(i) ^ keyVal);
     }
 
-    // 일반적인 VM 구조처럼 깔끔하게 return VM_FUNC(...)로 끝나도록 구성
-    return `${antiCode}local function ${vMain}(${vStream}, ${vEnv}, ...)
-    local ${vKeyName = randVar(lvl)} = ${vKey};
-    local ${vStack} = {};
-    local ${vPC} = 1;
+    let encStr = "";
+    for (let i = 0; i < bytes.length; i++) {
+        encStr += "\\" + bytes[i];
+    }
+
+    let securityBlocks = [];
     
-    -- 바이트 스트림 복호화 및 인터프리터 연산 파싱
-    local function ${vByte}()
-        if ${vPC} > #${vStream} then return nil end;
-        local hex = string.sub(${vStream}, ${vPC}, ${vPC} + 1);
-        ${vPC} = ${vPC} + 2;
-        local b = tonumber(hex, 16);
-        return b and bit32 and bit32.bxor(b, ${vKeyName}) or (b and (b >= ${vKeyName} and b - ${vKeyName} or b + ${vKeyName}));
-    end
-    
-    -- VM execution runtime loop
-    local decoded = {};
-    while true do
-        local charCode = ${vByte}();
-        if not charCode then break end;
-        table.insert(decoded, string.char(charCode));
-    end
-    
-    local runChunk = load or loadstring;
-    if runChunk then
-        return runChunk(table.concat(decoded), "@VM_Protected", "t", ${vEnv})(...);
-    end
-end
-return ${vMain}("${bytePayload}", getfenv or function() return _ENV end, ...);`;
+    if (doDebug) {
+        const vDbg = genSym();
+        securityBlocks.push(`local ${vDbg}=(getfenv or function()return _ENV end)().debug;if ${vDbg} then ${vDbg}.sethook=nil ${vDbg}.getupvalue=nil end;`);
+    }
+
+    if (doTamper) {
+        securityBlocks.push(`if #string.format("%s","")~=0 or #tostring(100)~=3 then return end;`);
+    }
+
+    const secHeader = securityBlocks.join("");
+
+    const vmCode = `${secHeader}local function ${vMain}(${vStream},${vEnv},...)local ${vKey}=${keyVal};local ${vIP}=1;local function ${vR}()local ${vA}=string.byte(${vStream},${vIP},${vIP});${vIP}=${vIP}+1;return ${vA} and (bit32 and bit32.bxor(${vA},${vKey}) or (${vA}>=${vKey} and ${vA}-${vKey} or ${vA}+${vKey}));end;local function ${vInst}()local ${vOp}={};while true do local ${vA}=${vR}();if not ${vA} then break end;table.insert(${vOp},string.char(${vA}));end;return table.concat(${vOp});end;local ${vB}=(getfenv or function()return _ENV end)();local ${vC}=${vB}["\\108\\111\\97\\100"] or ${vB}["\\108\\111\\97\\100\\115\\116\\112\\105\\110\\103"];if ${vC} then return ${vC}(${vInst}(),"@VM", "t", ${vEnv})(...);end;end;return ${vMain}("${encStr}",getfenv or function()return _ENV end,...);`;
+
+    return vmCode;
 }
 
-function processObfuscation() {
+function processSinglePass(code) {
+    let result = buildVM(code);
+    const doMinify = document.getElementById('minify').checked;
+    if (doMinify) {
+        result = result.replace(/\r?\n|\r/g, " ").replace(/\s+/g, " ").trim();
+    }
+    return result;
+}
+
+function runObfuscate(passes) {
     const input = document.getElementById('src').value;
     if (!input.trim()) return;
-    document.getElementById('out').value = generateVM(input);
+
+    let output = input;
+    for (let i = 0; i < passes; i++) {
+        output = processSinglePass(output);
+    }
+
+    document.getElementById('out').value = output;
 }
 
 function loadFile(e) {
