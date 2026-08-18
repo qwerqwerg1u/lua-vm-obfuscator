@@ -2,19 +2,20 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>Zk Secure Studio - Enterprise Ultimate</title>
+<title>Zk Secure Studio</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
 <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
 <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-<h1 class="text-2xl font-bold tracking-tight text-indigo-400">⚡ Zk Secure Studio - Enterprise Ultimate</h1>
-<span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Full Protection Engine</span>
+<h1 class="text-2xl font-bold tracking-tight text-indigo-400">Zk Secure Studio</h1>
+<span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Standalone Engine</span>
 </div>
-<div class="space-y-6">
+
+<div id="editor-section" class="space-y-6">
 <div>
 <div class="flex items-center justify-between mb-2">
-<label class="text-sm font-semibold text-slate-300">원본 스크립트 직접 입력 또는 파일 업로드</label>
+<label class="text-sm font-semibold text-slate-300">원본 스크립트 입력 또는 파일 업로드</label>
 <button onclick="clearInput()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-lg transition font-medium">내용 지우기</button>
 </div>
 <div class="flex items-center gap-3 mb-3">
@@ -22,39 +23,63 @@
 </div>
 <textarea id="scriptInput" rows="10" placeholder="루아 코드를 입력하세요..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
 </div>
+
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div>
-<label class="block text-sm font-semibold mb-2 text-slate-300">난독화 및 암호화 방식</label>
+<label class="block text-sm font-semibold mb-2 text-slate-300">난독화 방식</label>
 <select id="obfType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500">
 <option value="hex" selected>16진수 XOR 난독화 (Hex)</option>
 <option value="dec">10진수 XOR 난독화 (Decimal)</option>
 </select>
 </div>
 <div>
-<label class="block text-sm font-semibold mb-2 text-slate-300">보안 모듈 및 고급 옵션</label>
+<label class="block text-sm font-semibold mb-2 text-slate-300">보안 및 압축 옵션</label>
 <div class="grid grid-cols-2 gap-2">
 <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="antiHook" checked class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">안티훅 차단</span>
+<input type="checkbox" id="antiHook" class="accent-indigo-600">
+<span class="text-xs text-slate-300 font-medium">안티훅</span>
 </label>
 <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="antiDebug" checked class="accent-indigo-600">
+<input type="checkbox" id="antiDebug" class="accent-indigo-600">
 <span class="text-xs text-slate-300 font-medium">안티디버그</span>
 </label>
 <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="antiTamper" checked class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">안티탬퍼링</span>
+<input type="checkbox" id="antiTamper" class="accent-indigo-600">
+<span class="text-xs text-slate-300 font-medium">안티탬퍼</span>
 </label>
 <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="doubleObf" checked class="accent-indigo-600">
+<input type="checkbox" id="doubleObf" class="accent-indigo-600">
 <span class="text-xs text-slate-300 font-medium">더블 난독화</span>
+</label>
+<label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition col-span-2">
+<input type="checkbox" id="minifyCode" class="accent-indigo-600">
+<span class="text-xs text-slate-300 font-medium">1줄 압축 (Minification)</span>
 </label>
 </div>
 </div>
 </div>
-<button onclick="processScript()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl transition shadow-lg shadow-indigo-600/20 text-base">완벽 난독화 적용 및 파일 다운로드</button>
+
+<button onclick="processScript()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl transition shadow-lg shadow-indigo-600/20 text-base">난독화 실행</button>
+</div>
+
+<div id="result-section" class="hidden space-y-6">
+<div class="flex items-center justify-between">
+<h2 class="text-lg font-bold text-emerald-400">난독화 완료</h2>
+<button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">돌아가기</button>
+</div>
+
+<div>
+<label class="block text-sm font-semibold mb-2 text-slate-300">난독화된 결과 코드</label>
+<textarea id="outputResult" rows="10" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<button onclick="copyToClipboard()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">복사하기</button>
+<button onclick="downloadFile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">파일 다운로드</button>
 </div>
 </div>
+</div>
+
 <script>
 document.getElementById('fileInput').addEventListener('change', function(e) {
 const file = e.target.files[0];
@@ -80,27 +105,38 @@ res += chars.charAt(Math.floor(Math.random() * chars.length));
 return res;
 }
 
-function lzwCompress(s) {
-let dict = {}, data = (s + "").split(""), out = [], phrase = data[0], code = 256;
-for (let i = 1; i < data.length; i++) {
-let curr = data[i];
-if (dict[phrase + curr] != null) {
-phrase += curr;
-} else {
-out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
-dict[phrase + curr] = code++;
-phrase = curr;
+function minifyLua(code) {
+let lines = code.split('\n');
+let cleanLines = [];
+let inMultilineComment = false;
+
+for (let line of lines) {
+let trimmed = line.trim();
+if (trimmed.startsWith('--[[')) {
+inMultilineComment = true;
+}
+if (inMultilineComment) {
+if (trimmed.includes(']]')) {
+inMultilineComment = false;
+}
+continue;
+}
+if (trimmed.startsWith('--')) {
+continue;
+}
+let commentIndex = line.indexOf('--');
+if (commentIndex !== -1) {
+line = line.substring(0, commentIndex);
+}
+if (line.trim().length > 0) {
+cleanLines.push(line.trim());
 }
 }
-out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
-for (let i = 0; i < out.length; i++) {
-out[i] = String.fromCharCode(out[i]);
-}
-return out.join("");
+return cleanLines.join(' ');
 }
 
 function processScript() {
-const rawCode = document.getElementById('scriptInput').value;
+let rawCode = document.getElementById('scriptInput').value;
 if (!rawCode.trim()) {
 alert('스크립트 내용이 비어있습니다.');
 return;
@@ -111,22 +147,26 @@ const isAntiHook = document.getElementById('antiHook').checked;
 const isAntiDebug = document.getElementById('antiDebug').checked;
 const isAntiTamper = document.getElementById('antiTamper').checked;
 const isDouble = document.getElementById('doubleObf').checked;
+const isMinify = document.getElementById('minifyCode').checked;
+
+if (isMinify) {
+rawCode = minifyLua(rawCode);
+}
 
 const key = Math.floor(Math.random() * 150) + 20;
-const compressed = lzwCompress(rawCode);
 
 let encodedData = '';
 if (isHex) {
 let parts = [];
-for (let i = 0; i < compressed.length; i++) {
-let xored = compressed.charCodeAt(i) ^ key;
+for (let i = 0; i < rawCode.length; i++) {
+let xored = rawCode.charCodeAt(i) ^ key;
 parts.push('\\x' + xored.toString(16).padStart(2, '0'));
 }
 encodedData = `return "${parts.join('')}"`;
 } else {
 let parts = [];
-for (let i = 0; i < compressed.length; i++) {
-parts.push(compressed.charCodeAt(i) ^ key);
+for (let i = 0; i < rawCode.length; i++) {
+parts.push(rawCode.charCodeAt(i) ^ key);
 }
 encodedData = `return {${parts.join(',')}}`;
 }
@@ -142,17 +182,15 @@ const v8 = rStr(9);
 const v9 = rStr(7);
 const v10 = rStr(8);
 const v11 = rStr(6);
-const v12 = rStr(9);
 const v13 = rStr(7);
 const v14 = rStr(8);
-const v15 = rStr(6);
 
 let antiHookCode = '';
 if (isAntiHook) {
 antiHookCode = `
 local ${v13}=game.HttpGet
 if tostring(${v13}):find("function: 0x")==nil and not tostring(${v13}):find("builtin") then
-error("보호중인스크립트")
+error("Protected")
 end
 `;
 }
@@ -162,7 +200,7 @@ if (isAntiDebug) {
 antiDebugCode = `
 if debug and debug.info then
 local ${v14}=pcall(function() return debug.info(1, "f") end)
-if not ${v14} then error("보호중인스크립트") end
+if not ${v14} then error("Protected") end
 end
 `;
 }
@@ -171,7 +209,7 @@ let antiTamperCode = '';
 if (isAntiTamper) {
 antiTamperCode = `
 if not getfenv or not pcall or not loadstring then
-error("보호중인스크립트")
+error("Protected")
 end
 `;
 }
@@ -197,15 +235,7 @@ end
 }
 
 let baseScript = `
-local ${v1}="보호중인스크립트"
-local function ${v2}()
-if not game or not game:GetService then
-print("이 스크립트는 Zk에 의해 보호되어져 있습니다.")
-return false
-end
-return true
-end
-if not ${v2}() then return end
+local ${v1}="Protected"
 ${antiHookCode}
 ${antiDebugCode}
 ${antiTamperCode}
@@ -219,8 +249,6 @@ end
 return ${v11}()
 end)
 if not ${v5} then
-local ${v12}=warn
-${v12}(${v1})
 return
 end
 `;
@@ -255,12 +283,35 @@ end
 `;
 }
 
-const blob = new Blob([finalCode], { type: 'text/plain' });
+document.getElementById('outputResult').value = finalCode;
+document.getElementById('editor-section').classList.add('hidden');
+document.getElementById('result-section').classList.remove('hidden');
+}
+
+function copyToClipboard() {
+const copyText = document.getElementById('outputResult');
+copyText.select();
+copyText.setSelectionRange(0, 99999);
+navigator.clipboard.writeText(copyText.value).then(() => {
+alert('복사되었습니다.');
+});
+}
+
+function downloadFile() {
+const code = document.getElementById('outputResult').value;
+const blob = new Blob([code], { type: 'text/plain' });
 const link = document.createElement('a');
 link.href = URL.createObjectURL(blob);
 link.download = 'zk_protected_script.lua';
 link.click();
 URL.revokeObjectURL(link.href);
+}
+
+function resetStudio() {
+document.getElementById('result-section').classList.add('hidden');
+document.getElementById('editor-section').classList.remove('hidden');
+document.getElementById('scriptInput').value = '';
+document.getElementById('fileInput').value = '';
 }
 </script>
 </body>
