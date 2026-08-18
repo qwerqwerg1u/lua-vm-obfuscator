@@ -2,317 +2,1030 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zk Secure Studio</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
 <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
-<div class="flex items-center justify-between border-b border-slate-800 pb-4">
-<h1 class="text-2xl font-bold tracking-tight text-indigo-400">Zk Secure Studio</h1>
-<span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Standalone Engine</span>
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <h1 class="text-2xl font-bold tracking-tight text-indigo-400">
+            Zk Secure Studio
+        </h1>
+
+        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">
+            Standalone Engine
+        </span>
+    </div>
+
+
+    <!-- EDITOR -->
+    <div id="editor-section" class="space-y-6">
+
+        <div>
+
+            <div class="flex items-center justify-between mb-2">
+
+                <label class="text-sm font-semibold text-slate-300">
+                    원본 스크립트 입력 또는 파일 업로드
+                </label>
+
+                <button
+                    onclick="clearInput()"
+                    class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-lg transition font-medium">
+                    내용 지우기
+                </button>
+
+            </div>
+
+
+            <!-- FILE -->
+            <div class="flex items-center gap-3 mb-3">
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".lua,.txt"
+                    class="block w-full text-sm text-slate-400
+                    file:mr-4
+                    file:py-2
+                    file:px-4
+                    file:rounded-xl
+                    file:border-0
+                    file:text-sm
+                    file:font-semibold
+                    file:bg-indigo-600
+                    file:text-white
+                    hover:file:bg-indigo-500
+                    cursor-pointer">
+
+            </div>
+
+
+            <!-- INPUT -->
+            <textarea
+                id="scriptInput"
+                rows="10"
+                placeholder="루아 코드를 입력하세요..."
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+
+        </div>
+
+
+        <!-- OPTIONS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- TYPE -->
+            <div>
+
+                <label class="block text-sm font-semibold mb-2 text-slate-300">
+                    난독화 방식
+                </label>
+
+                <select
+                    id="obfType"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500">
+
+                    <option value="hex" selected>
+                        16진수 XOR 난독화 (Hex)
+                    </option>
+
+                    <option value="dec">
+                        10진수 XOR 난독화 (Decimal)
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- SECURITY -->
+            <div>
+
+                <label class="block text-sm font-semibold mb-2 text-slate-300">
+                    보안 및 압축 옵션
+                </label>
+
+                <div class="grid grid-cols-2 gap-2">
+
+                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+
+                        <input
+                            type="checkbox"
+                            id="antiHook"
+                            class="accent-indigo-600">
+
+                        <span class="text-xs text-slate-300 font-medium">
+                            안티훅
+                        </span>
+
+                    </label>
+
+
+                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+
+                        <input
+                            type="checkbox"
+                            id="antiDebug"
+                            class="accent-indigo-600">
+
+                        <span class="text-xs text-slate-300 font-medium">
+                            안티디버그
+                        </span>
+
+                    </label>
+
+
+                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+
+                        <input
+                            type="checkbox"
+                            id="antiTamper"
+                            class="accent-indigo-600">
+
+                        <span class="text-xs text-slate-300 font-medium">
+                            안티탬퍼
+                        </span>
+
+                    </label>
+
+
+                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+
+                        <input
+                            type="checkbox"
+                            id="doubleObf"
+                            class="accent-indigo-600">
+
+                        <span class="text-xs text-slate-300 font-medium">
+                            더블 난독화
+                        </span>
+
+                    </label>
+
+
+                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition col-span-2">
+
+                        <input
+                            type="checkbox"
+                            id="minifyCode"
+                            class="accent-indigo-600">
+
+                        <span class="text-xs text-slate-300 font-medium">
+                            1줄 압축 (Minification)
+                        </span>
+
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PROCESS -->
+        <button
+            id="processButton"
+            onclick="processScript()"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl transition shadow-lg shadow-indigo-600/20 text-base">
+
+            난독화 실행
+
+        </button>
+
+    </div>
+
+
+
+    <!-- RESULT -->
+    <div id="result-section" class="hidden space-y-6">
+
+        <div class="flex items-center justify-between">
+
+            <h2 class="text-lg font-bold text-emerald-400">
+                난독화 완료
+            </h2>
+
+            <button
+                onclick="resetStudio()"
+                class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">
+
+                돌아가기
+
+            </button>
+
+        </div>
+
+
+        <!-- OUTPUT -->
+        <div>
+
+            <label class="block text-sm font-semibold mb-2 text-slate-300">
+                난독화된 결과 코드
+            </label>
+
+            <textarea
+                id="outputResult"
+                rows="14"
+                readonly
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
+
+        </div>
+
+
+        <!-- BUTTONS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <button
+                onclick="copyToClipboard()"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+
+                복사하기
+
+            </button>
+
+
+            <button
+                onclick="downloadFile()"
+                class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">
+
+                파일 다운로드
+
+            </button>
+
+        </div>
+
+    </div>
+
 </div>
 
-<div id="editor-section" class="space-y-6">
-<div>
-<div class="flex items-center justify-between mb-2">
-<label class="text-sm font-semibold text-slate-300">원본 스크립트 입력 또는 파일 업로드</label>
-<button onclick="clearInput()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-lg transition font-medium">내용 지우기</button>
-</div>
-<div class="flex items-center gap-3 mb-3">
-<input type="file" id="fileInput" accept=".lua,.txt" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
-</div>
-<textarea id="scriptInput" rows="10" placeholder="루아 코드를 입력하세요..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
-</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-semibold mb-2 text-slate-300">난독화 방식</label>
-<select id="obfType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500">
-<option value="hex" selected>16진수 XOR 난독화 (Hex)</option>
-<option value="dec">10진수 XOR 난독화 (Decimal)</option>
-</select>
-</div>
-<div>
-<label class="block text-sm font-semibold mb-2 text-slate-300">보안 및 압축 옵션</label>
-<div class="grid grid-cols-2 gap-2">
-<label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="antiHook" class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">안티훅</span>
-</label>
-<label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="antiDebug" class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">안티디버그</span>
-</label>
-<label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="antiTamper" class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">안티탬퍼</span>
-</label>
-<label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-<input type="checkbox" id="doubleObf" class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">더블 난독화</span>
-</label>
-<label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-12 px-3 rounded-xl cursor-pointer hover:border-indigo-500/50 transition col-span-2">
-<input type="checkbox" id="minifyCode" class="accent-indigo-600">
-<span class="text-xs text-slate-300 font-medium">1줄 압축 (Minification)</span>
-</label>
-</div>
-</div>
-</div>
-
-<button onclick="processScript()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl transition shadow-lg shadow-indigo-600/20 text-base">난독화 실행</button>
-</div>
-
-<div id="result-section" class="hidden space-y-6">
-<div class="flex items-center justify-between">
-<h2 class="text-lg font-bold text-emerald-400">난독화 완료</h2>
-<button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">돌아가기</button>
-</div>
-
-<div>
-<label class="block text-sm font-semibold mb-2 text-slate-300">난독화된 결과 코드</label>
-<textarea id="outputResult" rows="10" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-<button onclick="copyToClipboard()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">복사하기</button>
-<button onclick="downloadFile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">파일 다운로드</button>
-</div>
-</div>
-</div>
 
 <script>
-document.getElementById('fileInput').addEventListener('change', function(e) {
-const file = e.target.files[0];
-if (!file) return;
-const reader = new FileReader();
-reader.onload = function(evt) {
-document.getElementById('scriptInput').value = evt.target.result;
-};
-reader.readAsText(file);
+
+/* =========================================================
+   FILE INPUT
+========================================================= */
+
+document.getElementById("fileInput").addEventListener("change", function(e) {
+
+    const file = e.target.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(evt) {
+
+        document.getElementById("scriptInput").value = evt.target.result;
+
+    };
+
+    reader.onerror = function() {
+
+        alert("파일을 읽을 수 없습니다.");
+
+    };
+
+    reader.readAsText(file);
+
 });
+
+
+
+/* =========================================================
+   CLEAR
+========================================================= */
 
 function clearInput() {
-document.getElementById('scriptInput').value = '';
-document.getElementById('fileInput').value = '';
+
+    document.getElementById("scriptInput").value = "";
+    document.getElementById("fileInput").value = "";
+
 }
+
+
+
+/* =========================================================
+   RANDOM VARIABLE
+========================================================= */
 
 function rStr(len) {
-const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-let res = '';
-for (let i = 0; i < len; i++) {
-res += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    const chars =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    let res = "";
+
+    for (let i = 0; i < len; i++) {
+
+        res += chars.charAt(
+            Math.floor(Math.random() * chars.length)
+        );
+
+    }
+
+    return res;
+
 }
-return res;
+
+
+
+/* =========================================================
+   RANDOM KEY
+========================================================= */
+
+function randomKey() {
+
+    return Math.floor(Math.random() * 200) + 20;
+
 }
+
+
+
+/* =========================================================
+   LUA MINIFY
+========================================================= */
 
 function minifyLua(code) {
-let lines = code.split('\n');
-let cleanLines = [];
-let inMultilineComment = false;
 
-for (let line of lines) {
-let trimmed = line.trim();
-if (trimmed.startsWith('--[[')) {
-inMultilineComment = true;
+    const lines = code.split("\n");
+
+    const cleanLines = [];
+
+    let inMultilineComment = false;
+
+    for (let line of lines) {
+
+        let trimmed = line.trim();
+
+
+        /* multiline comment start */
+
+        if (trimmed.startsWith("--[[")) {
+
+            inMultilineComment = true;
+
+        }
+
+
+        /* multiline comment */
+
+        if (inMultilineComment) {
+
+            if (trimmed.includes("]]")) {
+
+                inMultilineComment = false;
+
+            }
+
+            continue;
+
+        }
+
+
+        /* full line comment */
+
+        if (trimmed.startsWith("--")) {
+
+            continue;
+
+        }
+
+
+        /* normal comment */
+
+        const commentIndex = line.indexOf("--");
+
+        if (commentIndex !== -1) {
+
+            line = line.substring(0, commentIndex);
+
+        }
+
+
+        if (line.trim().length > 0) {
+
+            cleanLines.push(line.trim());
+
+        }
+
+    }
+
+    return cleanLines.join(" ");
+
 }
-if (inMultilineComment) {
-if (trimmed.includes(']]')) {
-inMultilineComment = false;
+
+
+
+/* =========================================================
+   HEX ENCODER
+========================================================= */
+
+function encodeHex(code, key) {
+
+    const parts = [];
+
+    for (let i = 0; i < code.length; i++) {
+
+        const value =
+            code.charCodeAt(i) ^ key;
+
+        parts.push(
+            value.toString(16).padStart(2, "0")
+        );
+
+    }
+
+    return parts.join("");
+
 }
-continue;
+
+
+
+/* =========================================================
+   DECIMAL ENCODER
+========================================================= */
+
+function encodeDecimal(code, key) {
+
+    const parts = [];
+
+    for (let i = 0; i < code.length; i++) {
+
+        const value =
+            code.charCodeAt(i) ^ key;
+
+        parts.push(String(value));
+
+    }
+
+    return parts.join(",");
+
 }
-if (trimmed.startsWith('--')) {
-continue;
+
+
+
+/* =========================================================
+   HEX LUA DECODER
+========================================================= */
+
+function makeHexDecoder(encodedData, key, names) {
+
+    return `
+local ${names.data} = "${encodedData}"
+local ${names.out} = ""
+
+for ${names.i} = 1, #${names.data}, 2 do
+
+    local ${names.hex} =
+        string.sub(${names.data}, ${names.i}, ${names.i} + 1)
+
+    local ${names.num} =
+        tonumber(${names.hex}, 16)
+
+    if ${names.num} then
+
+        ${names.out} =
+            ${names.out} .. string.char(
+                bit32.bxor(${names.num}, ${key})
+            )
+
+    end
+
+end
+`;
+
 }
-let commentIndex = line.indexOf('--');
-if (commentIndex !== -1) {
-line = line.substring(0, commentIndex);
+
+
+
+/* =========================================================
+   DECIMAL LUA DECODER
+========================================================= */
+
+function makeDecimalDecoder(encodedData, key, names) {
+
+    return `
+local ${names.data} = {${encodedData}}
+local ${names.out} = ""
+
+for ${names.i}, ${names.num} in ipairs(${names.data}) do
+
+    ${names.out} =
+        ${names.out} .. string.char(
+            bit32.bxor(${names.num}, ${key})
+        )
+
+end
+`;
+
 }
-if (line.trim().length > 0) {
-cleanLines.push(line.trim());
-}
-}
-return cleanLines.join(' ');
-}
+
+
+
+/* =========================================================
+   MAIN PROCESS
+========================================================= */
 
 function processScript() {
-let rawCode = document.getElementById('scriptInput').value;
-if (!rawCode.trim()) {
-alert('스크립트 내용이 비어있습니다.');
-return;
-}
 
-const isHex = document.getElementById('obfType').value === 'hex';
-const isAntiHook = document.getElementById('antiHook').checked;
-const isAntiDebug = document.getElementById('antiDebug').checked;
-const isAntiTamper = document.getElementById('antiTamper').checked;
-const isDouble = document.getElementById('doubleObf').checked;
-const isMinify = document.getElementById('minifyCode').checked;
+    try {
 
-if (isMinify) {
-rawCode = minifyLua(rawCode);
-}
+        const input =
+            document.getElementById("scriptInput");
 
-const key = Math.floor(Math.random() * 150) + 20;
+        const output =
+            document.getElementById("outputResult");
 
-let encodedData = '';
-if (isHex) {
-let parts = [];
-for (let i = 0; i < rawCode.length; i++) {
-let xored = rawCode.charCodeAt(i) ^ key;
-parts.push('\\x' + xored.toString(16).padStart(2, '0'));
-}
-encodedData = `return "${parts.join('')}"`;
-} else {
-let parts = [];
-for (let i = 0; i < rawCode.length; i++) {
-parts.push(rawCode.charCodeAt(i) ^ key);
-}
-encodedData = `return {${parts.join(',')}}`;
-}
+        const editor =
+            document.getElementById("editor-section");
 
-const v1 = rStr(7);
-const v2 = rStr(8);
-const v3 = rStr(6);
-const v4 = rStr(9);
-const v5 = rStr(7);
-const v6 = rStr(8);
-const v7 = rStr(6);
-const v8 = rStr(9);
-const v9 = rStr(7);
-const v10 = rStr(8);
-const v11 = rStr(6);
-const v13 = rStr(7);
-const v14 = rStr(8);
+        const result =
+            document.getElementById("result-section");
 
-let antiHookCode = '';
-if (isAntiHook) {
-antiHookCode = `
-local ${v13}=game.HttpGet
-if tostring(${v13}):find("function: 0x")==nil and not tostring(${v13}):find("builtin") then
-error("Protected")
+
+        let rawCode =
+            input.value;
+
+
+        /* EMPTY CHECK */
+
+        if (!rawCode || !rawCode.trim()) {
+
+            alert("스크립트 내용이 비어있습니다.");
+
+            return;
+
+        }
+
+
+        /* OPTIONS */
+
+        const isHex =
+            document.getElementById("obfType").value === "hex";
+
+        const isAntiHook =
+            document.getElementById("antiHook").checked;
+
+        const isAntiDebug =
+            document.getElementById("antiDebug").checked;
+
+        const isAntiTamper =
+            document.getElementById("antiTamper").checked;
+
+        const isDouble =
+            document.getElementById("doubleObf").checked;
+
+        const isMinify =
+            document.getElementById("minifyCode").checked;
+
+
+        /* MINIFY */
+
+        if (isMinify) {
+
+            rawCode =
+                minifyLua(rawCode);
+
+        }
+
+
+        /* KEY */
+
+        const key =
+            randomKey();
+
+
+        /* VARIABLE NAMES */
+
+        const v1 = rStr(7);
+        const v2 = rStr(8);
+        const v3 = rStr(6);
+        const v4 = rStr(9);
+        const v5 = rStr(7);
+        const v6 = rStr(8);
+        const v7 = rStr(6);
+        const v8 = rStr(9);
+        const v9 = rStr(7);
+        const v10 = rStr(8);
+        const v11 = rStr(6);
+        const v12 = rStr(7);
+        const v13 = rStr(8);
+        const v14 = rStr(6);
+
+
+        /* =====================================================
+           ENCODE
+        ===================================================== */
+
+        let encodedData = "";
+
+        if (isHex) {
+
+            encodedData =
+                encodeHex(rawCode, key);
+
+        } else {
+
+            encodedData =
+                encodeDecimal(rawCode, key);
+
+        }
+
+
+        /* =====================================================
+           SECURITY CODE
+        ===================================================== */
+
+        let antiHookCode = "";
+
+        if (isAntiHook) {
+
+            antiHookCode = `
+-- Anti Hook
+local ${v13} = tostring(loadstring)
+
+if ${v13} == nil or #${v13} == 0 then
+    error("Protected")
 end
 `;
-}
 
-let antiDebugCode = '';
-if (isAntiDebug) {
-antiDebugCode = `
+        }
+
+
+        let antiDebugCode = "";
+
+        if (isAntiDebug) {
+
+            antiDebugCode = `
+-- Anti Debug
 if debug and debug.info then
-local ${v14}=pcall(function() return debug.info(1, "f") end)
-if not ${v14} then error("Protected") end
-end
-`;
-}
 
-let antiTamperCode = '';
-if (isAntiTamper) {
-antiTamperCode = `
-if not getfenv or not pcall or not loadstring then
-error("Protected")
-end
-`;
-}
+    local ${v14} = pcall(function()
 
-let decodeLogic = '';
-if (isHex) {
-decodeLogic = `
-local ${v8}=""
-for ${v9}=1,#${v7} do
-local ${v10}=tonumber(${v7}:sub(${v9},${v9}+3))
-if ${v10} then
-${v8}=${v8}..string.char(${v10}~=${key})
-end
-end
-`;
-} else {
-decodeLogic = `
-local ${v8}=""
-for _,${v9} in ipairs(${v7}) do
-${v8}=${v8}..string.char(${v9}~=${key})
-end
-`;
-}
+        return debug.info(1, "f")
 
-let baseScript = `
-local ${v1}="Protected"
+    end)
+
+    if not ${v14} then
+        error("Protected")
+    end
+
+end
+`;
+
+        }
+
+
+        let antiTamperCode = "";
+
+        if (isAntiTamper) {
+
+            antiTamperCode = `
+-- Anti Tamper
+if not pcall or not loadstring then
+    error("Protected")
+end
+`;
+
+        }
+
+
+        /* =====================================================
+           DECODER NAMES
+        ===================================================== */
+
+        const names = {
+
+            data: v7,
+            out: v8,
+            i: v9,
+            hex: v10,
+            num: v11
+
+        };
+
+
+        /* =====================================================
+           DECODER
+        ===================================================== */
+
+        let decodeLogic = "";
+
+
+        if (isHex) {
+
+            decodeLogic =
+                makeHexDecoder(
+                    encodedData,
+                    key,
+                    names
+                );
+
+        } else {
+
+            decodeLogic =
+                makeDecimalDecoder(
+                    encodedData,
+                    key,
+                    names
+                );
+
+        }
+
+
+        /* =====================================================
+           EXECUTION
+        ===================================================== */
+
+        const loaderName =
+            v12;
+
+
+        const baseScript = `
+-- Zk Secure Studio
+-- Generated Protection Layer
+
+local ${v1} = "Protected"
+
 ${antiHookCode}
+
 ${antiDebugCode}
+
 ${antiTamperCode}
-local ${v5},${v6}=pcall(function()
-local ${v7}=(${encoded})()
-${decodeLogic}
-local ${v11}=getfenv()[string.char(108,111,97,100,115,116,114,105,110,103)](${v8})
-if type(${v11})~="function" then
-error(${v1})
-end
-return ${v11}()
+
+local ${v2}, ${v3} = pcall(function()
+
+    ${decodeLogic}
+
+    local ${loaderName} = loadstring(${v8})
+
+    if type(${loaderName}) ~= "function" then
+        error(${v1})
+    end
+
+    return ${loaderName}()
+
 end)
-if not ${v5} then
-return
+
+if not ${v2} then
+    return
 end
 `;
 
-let finalCode = baseScript;
 
-if (isDouble) {
-const dKey = Math.floor(Math.random() * 150) + 20;
-let dParts = [];
-for (let i = 0; i < finalCode.length; i++) {
-let xored = finalCode.charCodeAt(i) ^ dKey;
-dParts.push('\\x' + xored.toString(16).padStart(2, '0'));
-}
-const dv1 = rStr(7);
-const dv2 = rStr(8);
-const dv3 = rStr(6);
-const dv4 = rStr(9);
-const dv5 = rStr(7);
-finalCode = `
-local ${dv1}="${dParts.join('')}"
-local ${dv2}=""
-for ${dv3}=1,#${dv1} do
-local ${dv4}=tonumber(${dv1}:sub(${dv3},${dv3}+3))
-if ${dv4} then
-${dv2}=${dv2}..string.char(${dv4}~=${dKey})
+        let finalCode =
+            baseScript;
+
+
+        /* =====================================================
+           DOUBLE OBFUSCATION
+        ===================================================== */
+
+        if (isDouble) {
+
+            const dKey =
+                randomKey();
+
+            const dEncoded =
+                encodeHex(
+                    finalCode,
+                    dKey
+                );
+
+
+            const dv1 = rStr(7);
+            const dv2 = rStr(8);
+            const dv3 = rStr(6);
+            const dv4 = rStr(9);
+            const dv5 = rStr(7);
+            const dv6 = rStr(8);
+
+
+            finalCode = `
+-- Zk Secure Studio Double Layer
+
+local ${dv1} = "${dEncoded}"
+local ${dv2} = ""
+
+for ${dv3} = 1, #${dv1}, 2 do
+
+    local ${dv4} =
+        string.sub(
+            ${dv1},
+            ${dv3},
+            ${dv3} + 1
+        )
+
+    local ${dv5} =
+        tonumber(${dv4}, 16)
+
+    if ${dv5} then
+
+        ${dv2} =
+            ${dv2} ..
+            string.char(
+                bit32.bxor(${dv5}, ${dKey})
+            )
+
+    end
+
 end
-end
-local ${dv5}=getfenv()[string.char(108,111,97,100,115,116,114,105,110,103)](${dv2})
-if type(${dv5})=="function" then
-${dv5}()
+
+local ${dv6} = loadstring(${dv2})
+
+if type(${dv6}) == "function" then
+    ${dv6}()
 end
 `;
+
+        }
+
+
+        /* =====================================================
+           OUTPUT
+        ===================================================== */
+
+        output.value =
+            finalCode;
+
+
+        /* =====================================================
+           SCREEN CHANGE
+        ===================================================== */
+
+        editor.classList.add("hidden");
+
+        result.classList.remove("hidden");
+
+
+        /* SCROLL */
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Zk Secure Studio Error:",
+            error
+        );
+
+        alert(
+            "난독화 중 오류가 발생했습니다.\n\n" +
+            error.message
+        );
+
+    }
+
 }
 
-document.getElementById('outputResult').value = finalCode;
-document.getElementById('editor-section').classList.add('hidden');
-document.getElementById('result-section').classList.remove('hidden');
+
+
+/* =========================================================
+   COPY
+========================================================= */
+
+async function copyToClipboard() {
+
+    const copyText =
+        document.getElementById("outputResult");
+
+
+    try {
+
+        await navigator.clipboard.writeText(
+            copyText.value
+        );
+
+        alert("복사되었습니다.");
+
+    }
+
+    catch (error) {
+
+        copyText.focus();
+        copyText.select();
+
+        document.execCommand("copy");
+
+        alert("복사되었습니다.");
+
+    }
+
 }
 
-function copyToClipboard() {
-const copyText = document.getElementById('outputResult');
-copyText.select();
-copyText.setSelectionRange(0, 99999);
-navigator.clipboard.writeText(copyText.value).then(() => {
-alert('복사되었습니다.');
-});
-}
+
+
+/* =========================================================
+   DOWNLOAD
+========================================================= */
 
 function downloadFile() {
-const code = document.getElementById('outputResult').value;
-const blob = new Blob([code], { type: 'text/plain' });
-const link = document.createElement('a');
-link.href = URL.createObjectURL(blob);
-link.download = 'zk_protected_script.lua';
-link.click();
-URL.revokeObjectURL(link.href);
+
+    const code =
+        document.getElementById("outputResult").value;
+
+
+    if (!code) {
+
+        alert("다운로드할 코드가 없습니다.");
+
+        return;
+
+    }
+
+
+    const blob =
+        new Blob(
+            [code],
+            { type: "text/plain;charset=utf-8" }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    link.href = url;
+
+    link.download =
+        "zk_protected_script.lua";
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+
+    setTimeout(function() {
+
+        URL.revokeObjectURL(url);
+
+    }, 1000);
+
 }
 
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
 function resetStudio() {
-document.getElementById('result-section').classList.add('hidden');
-document.getElementById('editor-section').classList.remove('hidden');
-document.getElementById('scriptInput').value = '';
-document.getElementById('fileInput').value = '';
+
+    document
+        .getElementById("result-section")
+        .classList.add("hidden");
+
+
+    document
+        .getElementById("editor-section")
+        .classList.remove("hidden");
+
+
+    document
+        .getElementById("scriptInput")
+        .value = "";
+
+
+    document
+        .getElementById("fileInput")
+        .value = "";
+
+
+    document
+        .getElementById("outputResult")
+        .value = "";
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
 }
+
 </script>
+
 </body>
 </html>
