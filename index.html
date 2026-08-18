@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Final Complete Lua 5.1 Pure VM Engine</title>
+    <title>Lua 5.1 VM </title>
     <style>
         body { font-family: monospace; background: #080c14; color: #f8fafc; margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; background: #111827; padding: 25px; border-radius: 8px; border: 1px solid #1f2937; }
@@ -12,6 +12,8 @@
         .btn-group { margin: 15px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         button { background: #0284c7; color: white; border: none; padding: 10px 18px; font-weight: bold; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0369a1; }
+        .btn-obfuscate { background: #9333ea; }
+        .btn-obfuscate:hover { background: #7e22ce; }
         .chk-group { display: flex; gap: 15px; margin-left: 10px; color: #94a3b8; font-size: 13px; }
         .chk-group label { display: flex; align-items: center; gap: 5px; margin: 0; font-weight: normal; }
         input[type="file"] { display: none; }
@@ -21,39 +23,42 @@
 </head>
 <body>
     <div class="container">
-        <h2>Final Complete Lua 5.1 Pure VM Engine</h2>
+        <h2>완벽한 Lua 5.1 순수 VM 엔진</h2>
         
-        <label>Input Source Code (Lua 5.1):</label>
-        <textarea id="src">local a = 10
-local b = 20
-print(a + b)</textarea>
+        <label>입력 소스 코드 (Lua 5.1):</label>
+        <textarea id="src">local t = {}
+t["x"] = 100
+function t:f(val) return self.x, val end
+
+local a, b = t:f(200)
+print(a, b)</textarea>
         
         <div class="btn-group">
-            <button onclick="compileOnly()">Compile</button>
-            <button onclick="compileAndValidate()">Compile + Validate</button>
-            <label class="file-lbl"><input type="file" id="fileIn" accept=".lua,.txt" onchange="uploadFile(event)">Upload Lua</label>
-            <button onclick="downloadVM()">Download VM</button>
-            <button onclick="unpackVM()">Unpack</button>
-            <button onclick="runTestSuite()">Debug Test (20 Tests)</button>
-            <button onclick="clearAll()">Clear</button>
+            <button onclick="compileOnly()">컴파일</button>
+            <button onclick="compileAndValidate()">컴파일 + 검증</button>
+            <label class="file-lbl"><input type="file" id="fileIn" accept=".lua,.txt" onchange="uploadFile(event)">Lua 파일 업로드</label>
+            <button onclick="downloadVM()">VM 다운로드</button>
+            <button onclick="unpackVM()">언팩 (Unpack)</button>
+            <button class="btn-obfuscate" onclick="obfuscateVM()">난독화 (Obfuscate)</button>
+            <button onclick="runTestSuite()">디버그 테스트 (20개 검증)</button>
+            <button onclick="clearAll()">모두 지우기</button>
             <div class="chk-group">
-                <label><input type="checkbox" id="chkDebug" checked> Debug Mode</label>
-                <label><input type="checkbox" id="chkPack"> Pack Mode</label>
-                <label><input type="checkbox" id="chkRand"> Randomize</label>
+                <label><input type="checkbox" id="chkPack"> 팩 모드 (Pack)</label>
+                <label><input type="checkbox" id="chkRand"> 랜덤화 (Rand)</label>
             </div>
         </div>
 
-        <label>Debug / Test Output:</label>
+        <label>디버그 / 테스트 출력:</label>
         <textarea id="dbg" style="height:120px; color:#a3e635;"></textarea>
         
-        <label>Final VM Bytecode Output:</label>
+        <label>최종 VM 바이트코드 출력:</label>
         <textarea id="out" readonly></textarea>
     </div>
 
 <script>
 class VMError extends Error {
     constructor(phase, msg, line, col) {
-        super(`[${phase}] ${msg} at line ${line}:${col}`);
+        super(`[${phase}] ${msg} (라인 ${line}:${col})`);
         this.phase = phase;
         this.line = line;
         this.col = col;
@@ -146,7 +151,7 @@ function Lexer(code) {
                 }
             }
             let num = Number(val);
-            if (isNaN(num)) throw new VMError("Lexer", "Invalid number format", tLine, tCol);
+            if (isNaN(num)) throw new VMError("Lexer", "잘못된 숫자 형식입니다", tLine, tCol);
             tokens.push({ type: 'NUM', val: num, line: tLine, col: tCol });
             continue;
         }
@@ -203,7 +208,7 @@ function Parser(tokens) {
     function expect(t, v) {
         let pk = peek();
         if (pk.type !== t || (v !== undefined && pk.val !== v)) {
-            throw new VMError("Parser", `Expected ${v || t} but got ${pk.val}`, pk.line, pk.col);
+            throw new VMError("Parser", `예상된 토큰: ${v || t}, 실제: ${pk.val}`, pk.line, pk.col);
         }
         return next();
     }
@@ -299,7 +304,7 @@ function Parser(tokens) {
             expect('OP', '=');
             return { type: 'Assign', targets, exprs: parseExprList() };
         }
-        if (target.type !== 'CallExpr' && target.type !== 'MethodCall') throw new VMError("Parser", "Unexpected statement", pk.line, pk.col);
+        if (target.type !== 'CallExpr' && target.type !== 'MethodCall') throw new VMError("Parser", "예기치 않은 구문입니다", pk.line, pk.col);
         return { type: 'CallStat', call: target };
     }
 
@@ -370,7 +375,7 @@ function Parser(tokens) {
         }
         if (peek().type === 'STR') return [{ type: 'Str', val: next().val }];
         if (peek().type === 'OP' && peek().val === '{') return [parseTable()];
-        throw new VMError("Parser", "Invalid function arguments", peek().line, peek().col);
+        throw new VMError("Parser", "잘못된 함수 인자입니다", peek().line, peek().col);
     }
 
     function parseTable() {
@@ -409,7 +414,7 @@ function Parser(tokens) {
     }
 
     let ast = parseBlock();
-    if (tIdx < tokens.length - 1) throw new VMError("Parser", "Unexpected token after chunk", peek().line, peek().col);
+    if (tIdx < tokens.length - 1) throw new VMError("Parser", "청크 이후에 예기치 않은 토큰이 있습니다", peek().line, peek().col);
     return ast;
 }
 
@@ -533,7 +538,7 @@ class Compiler {
                 } else if (t.type === 'Id') {
                     let vr = this.resolveVar(t.val, this.cProto);
                     if (vr.type === 'local') this.emit(OP_MOVE, vr.reg, tRegs[i]);
-                    else if (vr.type === 'upval') this.emit(OP_SETUPVAL, tRegs[i], vr.reg);
+                    else if (vr.type === 'upval') this.emit(OP_SETUPVAL, tRegs[i], vr.reg); // a: reg, b: idx
                     else this.emit(OP_SETGLOBAL, tRegs[i], this.addConst(vr.name));
                 } else if (t.type === 'Index') {
                     let rObj = this.allocReg(), rKey = this.allocReg();
@@ -797,7 +802,7 @@ function Validator(protos) {
         for (let i = 0; i < p.inst.length; i++) {
             let inst = p.inst[i];
             let op = inst[0];
-            if (op < 0 || op > 32) throw new Error("Invalid opcode");
+            if (op < 0 || op > 32) throw new Error("잘못된 오프코드입니다");
         }
     }
 }
@@ -829,7 +834,7 @@ class JSVM {
         let pInst = proto.inst, pConst = proto.consts;
 
         while (pc < pInst.length) {
-            if (--budget < 0) throw new Error("Budget exceeded");
+            if (--budget < 0) throw new Error("실행 예산(루프 제한) 초과");
             let inst = pInst[pc++];
             let op = inst[0], a = inst[1], b = inst[2], c = inst[3];
             
@@ -841,8 +846,13 @@ class JSVM {
             else if (op === OP_GETGLOBAL) stk[a] = this.env[pConst[b]];
             else if (op === OP_GETTABLE) stk[a] = stk[b][stk[c]];
             else if (op === OP_SETGLOBAL) this.env[pConst[b]] = stk[a];
-            else if (op === OP_SETUPVAL) { if (upvals[a].v !== undefined) upvals[a].v = stk[b]; else upvals[a].stk[upvals[a].idx] = stk[b]; }
-            else if (op === OP_SETTABLE) stk[a][b] = stk[c];
+            else if (op === OP_SETUPVAL) {
+                // BUG FIX 3: a는 소스 레지스터, b는 업밸류 인덱스로 사용됨
+                let uv = upvals[b];
+                if (uv.v !== undefined) uv.v = stk[a];
+                else uv.stk[uv.idx] = stk[a];
+            }
+            else if (op === OP_SETTABLE) stk[a][stk[b]] = stk[c]; // BUG FIX 1: stk[b] 가 테이블 키임
             else if (op === OP_NEWTABLE) stk[a] = {};
             else if (op === OP_SELF) { stk[a+1] = stk[b]; stk[a] = stk[b][stk[c]]; }
             else if (op === OP_ADD) stk[a] = stk[b] + stk[c];
@@ -853,7 +863,12 @@ class JSVM {
             else if (op === OP_POW) stk[a] = Math.pow(stk[b], stk[c]);
             else if (op === OP_UNM) stk[a] = -stk[b];
             else if (op === OP_NOT) stk[a] = !(stk[b] !== false && stk[b] !== null && stk[b] !== undefined);
-            else if (op === OP_LEN) stk[a] = Object.keys(stk[b]).length; 
+            else if (op === OP_LEN) {
+                // BUG FIX 4: JS Object.keys 대신 Lua 스타일 연속된 1-based index 길이
+                let len = 0;
+                while (stk[b][len + 1] !== undefined) len++;
+                stk[a] = len;
+            }
             else if (op === OP_CONCAT) stk[a] = String(stk[b]) + String(stk[c]);
             else if (op === OP_JMP) pc = a;
             else if (op === OP_JMP_T) { if (stk[a] !== false && stk[a] !== null && stk[a] !== undefined) pc = b; }
@@ -867,7 +882,8 @@ class JSVM {
                 if (b === 0) { for(let i=a+1; i<top; i++) cArgs.push(stk[i]); }
                 else { for(let i=1; i<b; i++) cArgs.push(stk[a+i]); }
                 
-                let res = typeof fn === 'function' ? fn(...cArgs) : fn.call(this, cArgs);
+                // BUG FIX 2: 클로저 구조 변경으로 인해 화살표 함수 자체를 호출
+                let res = fn(...cArgs); 
                 if (!Array.isArray(res)) res = [res];
                 
                 if (c === 0) {
@@ -894,7 +910,8 @@ class JSVM {
                         cUvs.push(uv);
                     } else cUvs.push(upvals[d.idx]);
                 }
-                stk[a] = { call: (_, cArgs) => this.runProto(cp, cArgs, cUvs) };
+                // BUG FIX 2: 클로저 자체를 함수로 만들기
+                stk[a] = (...args) => this.runProto(cp, args, cUvs);
             }
             else if (op === OP_VARARG) {
                 let vargs = args; 
@@ -958,8 +975,8 @@ local function ${vExec}(pIdx, uvs, ...)
     elseif op == 5 then stk[a] = ${vEnv}[k[b+1]]
     elseif op == 6 then stk[a] = stk[b][stk[c]]
     elseif op == 7 then ${vEnv}[k[b+1]] = stk[a]
-    elseif op == 8 then if uvs[a+1].v ~= nil then uvs[a+1].v = stk[b] else uvs[a+1].stk[uvs[a+1].idx] = stk[b] end
-    elseif op == 9 then stk[a][b] = stk[c]
+    elseif op == 8 then local uv = uvs[b+1]; if uv.v ~= nil then uv.v = stk[a] else uv.stk[uv.idx] = stk[a] end -- FIX: a is source, b is index
+    elseif op == 9 then stk[a][stk[b]] = stk[c] -- FIX: stk[b] used as key
     elseif op == 10 then stk[a] = {}
     elseif op == 11 then stk[a+1] = stk[b]; stk[a] = stk[b][stk[c]]
     elseif op == 12 then stk[a] = stk[b] + stk[c]
@@ -1033,14 +1050,13 @@ function process(validateOnly = false) {
         let c = new Compiler();
         let protos = c.compile(ast);
         Validator(protos);
-        if (validateOnly) { document.getElementById('dbg').value = "Validation Passed!"; return; }
+        if (validateOnly) { document.getElementById('dbg').value = "검증 완료! 이상 없습니다."; return; }
         
         let p = document.getElementById('chkPack').checked;
         let r = document.getElementById('chkRand').checked;
-        let d = document.getElementById('chkDebug').checked;
         let out = Serializer(protos, p, r);
         document.getElementById('out').value = out;
-        document.getElementById('dbg').value = "Compiled successfully.";
+        document.getElementById('dbg').value = "성공적으로 컴파일되었습니다.";
     } catch (e) {
         document.getElementById('dbg').value = e.stack || e.message;
     }
@@ -1048,6 +1064,30 @@ function process(validateOnly = false) {
 
 function compileOnly() { process(false); }
 function compileAndValidate() { process(true); }
+
+function obfuscateVM() {
+    let src = document.getElementById('src').value;
+    try {
+        let t = Lexer(src);
+        let ast = Parser(t);
+        let c = new Compiler();
+        let protos = c.compile(ast);
+        Validator(protos);
+        
+        // 무조건 랜덤화 팩모드로 설정하여 압축률과 난독성을 높입니다.
+        let out = Serializer(protos, true, true);
+        
+        // 주석 삭제 및 줄바꿈/공백 축소 (난독화)
+        out = out.replace(/--.*/g, ''); 
+        out = out.replace(/\n/g, ' '); 
+        out = out.replace(/\s+/g, ' '); 
+        
+        document.getElementById('out').value = out.trim();
+        document.getElementById('dbg').value = "성공적으로 난독화되었습니다 (주석/공백 제거 및 식별자 셔플 적용).";
+    } catch (e) {
+        document.getElementById('dbg').value = e.stack || e.message;
+    }
+}
 
 function uploadFile(e) {
     let file = e.target.files[0];
@@ -1067,49 +1107,63 @@ function downloadVM() {
     a.click();
 }
 
-function unpackVM() { document.getElementById('dbg').value = "Unpack mode (visual verify) - the output is already pure Lua VM AST. Unpack is implicit in the generated source."; }
+function unpackVM() { document.getElementById('dbg').value = "언팩 모드 (시각적 확인) - 출력물은 이미 순수 Lua VM AST입니다. 언팩은 생성된 소스에 암묵적으로 포함되어 있습니다."; }
 function clearAll() { document.getElementById('src').value=''; document.getElementById('out').value=''; document.getElementById('dbg').value=''; }
 
+// 테스트 슈트에 실제 검증기(Validator)와 예상 결과값 추가
 const TESTS = [
-    "local a = 10\nlocal b = 20\nprint(a + b)",
-    "local x = 10\nif x > 5 then print('yes') else print('no') end",
-    "local x = 0\nwhile x < 5 do x = x + 1 end\nprint(x)",
-    "function add(a,b) return a+b end\nprint(add(2,3))",
-    "local function outer(a) local b = 20 return function(c) return a+b+c end end\nlocal f = outer(5) print(f(15))",
-    "local x = 10\nlocal f = function() return x end\nx = 20\nprint(f())",
-    "local a,b,c = 1,2,3\nprint(a,b,c)",
-    "local a = true and 10\nlocal b = false or 20\nprint(a,b)",
-    "local x = 2^3^2\nprint(x)",
-    "local x = 'a'..'b'..'c'\nprint(x)",
-    "local t = {a=10,[2]=20,30}\nprint(t.a,t[2],t[1])",
-    "local t = {}\nt['x'] = 100\nprint(t.x)",
-    "function test(...) return ... end\nlocal a,b = test(1,2)\nprint(a,b)",
-    "local x = 0\nfor i=1,10 do x=x+i end\nprint(x)",
-    "local x=0\nrepeat x=x+1 until x>=5\nprint(x)",
-    "local function f() local x=10 local function g() x=x+1 return x end return g,g end\nlocal a,b=f()\nprint(a(),b(),a())",
-    "local t={} function t:f(x) return self,x end local a,b=t:f(10) print(type(a)=='table',b)",
-    "local x=10 local function a() local function b() return x end return b end local f=a() print(f())",
-    "local x=false local y=0 if x then y=1 elseif y==0 then y=2 else y=3 end print(y)",
-    "local a = nil print(a == nil)"
+    { code: "local a = 10\nlocal b = 20\nprint(a + b)", expected: "30" },
+    { code: "local x = 10\nif x > 5 then print('yes') else print('no') end", expected: "yes" },
+    { code: "local x = 0\nwhile x < 5 do x = x + 1 end\nprint(x)", expected: "5" },
+    { code: "function add(a,b) return a+b end\nprint(add(2,3))", expected: "5" },
+    { code: "local function outer(a) local b = 20 return function(c) return a+b+c end end\nlocal f = outer(5) print(f(15))", expected: "40" },
+    { code: "local x = 10\nlocal f = function() return x end\nx = 20\nprint(f())", expected: "20" },
+    { code: "local a,b,c = 1,2,3\nprint(a,b,c)", expected: "1\t2\t3" },
+    { code: "local a = true and 10\nlocal b = false or 20\nprint(a,b)", expected: "10\t20" },
+    { code: "local x = 2^3^2\nprint(x)", expected: "512" }, // Lua right-associative power (3^2 = 9 -> 2^9 = 512)
+    { code: "local x = 'a'..'b'..'c'\nprint(x)", expected: "abc" },
+    { code: "local t = {a=10,[2]=20,30}\nprint(t.a,t[2],t[1])", expected: "10\t20\t30" },
+    { code: "local t = {}\nt['x'] = 100\nprint(t.x)", expected: "100" },
+    { code: "function test(...) return ... end\nlocal a,b = test(1,2)\nprint(a,b)", expected: "1\t2" },
+    { code: "local x = 0\nfor i=1,10 do x=x+i end\nprint(x)", expected: "55" },
+    { code: "local x=0\nrepeat x=x+1 until x>=5\nprint(x)", expected: "5" },
+    { code: "local function f() local x=10 local function g() x=x+1 return x end return g,g end\nlocal a,b=f()\nprint(a(),b(),a())", expected: "11\t12\t13" },
+    { code: "local t={} function t:f(x) return self,x end local a,b=t:f(10) print(type(a)=='table',b)", expected: "true\t10" },
+    { code: "local x=10 local function a() local function b() return x end return b end local f=a() print(f())", expected: "10" },
+    { code: "local x=false local y=0 if x then y=1 elseif y==0 then y=2 else y=3 end print(y)", expected: "2" },
+    { code: "local a = nil print(a == nil)", expected: "true" }
 ];
 
 function runTestSuite() {
     let d = document.getElementById('dbg');
-    d.value = "Running Tests...\n";
+    d.value = "테스트 실행 및 검증 중...\n";
     let pass = 0;
+    
     for (let i = 0; i < TESTS.length; i++) {
+        let testOut = [];
         try {
-            d.value += `Test ${i+1}: `;
-            let ast = Parser(Lexer(TESTS[i]));
+            let ast = Parser(Lexer(TESTS[i].code));
             let protos = new Compiler().compile(ast);
             let vm = new JSVM(protos);
+            
+            // print 함수를 후킹하여 출력을 캡처 (실제 출력 검증을 위함)
+            vm.env.print = (...args) => testOut.push(args.join('\t'));
+            
             vm.execute();
-            pass++;
+            
+            let result = testOut.join('\n');
+            if (result === TESTS[i].expected) {
+                d.value += `[PASS] 테스트 ${i+1}\n`;
+                pass++;
+            } else {
+                d.value += `[FAIL] 테스트 ${i+1} : 기대값 "${TESTS[i].expected}" / 실제 "${result}"\n`;
+            }
         } catch(e) {
-            d.value += `FAIL -> ${e.message}\n`;
+            d.value += `[ERROR] 테스트 ${i+1} 예외 발생: ${e.message}\n`;
         }
     }
-    d.value += `\nPassed ${pass} / ${TESTS.length} tests.\n`;
+    d.value += `\n성공: ${pass} / ${TESTS.length} 테스트.\n`;
+    d.scrollTop = d.scrollHeight;
 }
 </script>
 </body>
