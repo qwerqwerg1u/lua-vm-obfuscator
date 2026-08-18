@@ -11,16 +11,19 @@
     <div class="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8">
         <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
             <h1 class="text-2xl font-bold tracking-tight text-indigo-400">⚡ Zk Secure Studio Ultimate</h1>
-            <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">XOR & No-Keyword Engine</span>
+            <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Advanced Security Engine</span>
         </div>
 
         <div id="editor-section" class="space-y-6">
             <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">원본 스크립트 입력 또는 파일 업로드</label>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-semibold text-slate-300">원본 스크립트 입력 또는 파일 업로드</label>
+                    <button onclick="clearInput()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-lg transition">🗑️ 내용 지우기</button>
+                </div>
                 <div class="flex items-center gap-3 mb-3">
                     <input type="file" id="fileInput" accept=".lua,.txt" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
                 </div>
-                <textarea id="scriptInput" rows="8" placeholder="루아 코드를 입력하세요..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                <textarea id="scriptInput" rows="8" placeholder="루아 코드를 직접 입력하거나 파일을 업로드하세요..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -32,30 +35,42 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold mb-2 text-slate-300">시스템 보호 모드</label>
-                    <div class="flex items-center h-12 px-4 bg-slate-950 border border-slate-800 rounded-xl text-sm text-indigo-300">
-                        🔒 무주석 / 키워드 우회 / 안티후킹 활성
+                    <label class="block text-sm font-semibold mb-2 text-slate-300">고급 보안 모듈 설정</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="flex items-center justify-center gap-1.5 bg-slate-950 border border-slate-800 h-12 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                            <input type="checkbox" id="antiHook" checked class="accent-indigo-600">
+                            <span class="text-xs text-slate-300 font-medium">안티훅</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-1.5 bg-slate-950 border border-slate-800 h-12 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                            <input type="checkbox" id="antiDebug" checked class="accent-indigo-600">
+                            <span class="text-xs text-slate-300 font-medium">안티디버그</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-1.5 bg-slate-950 border border-slate-800 h-12 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                            <input type="checkbox" id="antiTamper" checked class="accent-indigo-600">
+                            <span class="text-xs text-slate-300 font-medium">안티탬퍼</span>
+                        </label>
                     </div>
                 </div>
             </div>
 
             <button onclick="generateLoader()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/2">
-                세이브 및 XOR API 로더 생성
+                세이브 및 고급 보안 API 로더 생성
             </button>
         </div>
 
         <div id="result-section" class="hidden space-y-6 mt-6 pt-6 border-t border-slate-800">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-bold text-emerald-400">✨ XOR 로더 및 암호화 파일 생성 완료</h2>
-                <button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">다시 만들기</button>
+                <h2 class="text-lg font-bold text-emerald-400">✨ 고급 보안 로더 및 암호화 파일 생성 완료</h2>
+                <button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">처음으로 돌아가기</button>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">깃허브 업로드용 암호화된 코드 결과물</label>
-                <textarea id="encryptedPayloadOutput" rows="4" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
-                <button onclick="copyPayload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 rounded-lg transition mb-4">
-                    📋 암호화된 페이로드 파일 내용 복사하기 (이 내용을 깃허브에 업로드하세요)
-                </button>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-semibold text-slate-300">깃허브 업로드용 암호화된 코드 (페이로드)</label>
+                    <button onclick="copyPayload()" class="text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition font-medium">📋 페이로드 복사하기</button>
+                </div>
+                <textarea id="encryptedPayloadOutput" rows="4" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none"></textarea>
+                <p class="text-xs text-slate-500 mt-1.5">* 이 내용을 `.lua` 파일로 저장하여 깃허브에 업로드하세요.</p>
             </div>
 
             <div>
@@ -64,15 +79,14 @@
             </div>
 
             <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">복사 전용 최종 API 로더 스크립트</label>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-semibold text-slate-300">최종 API 로더 스크립트 (사용자 공유용)</label>
+                    <button onclick="copyToClipboard()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition font-medium shadow">📋 로더 복사하기</button>
+                </div>
                 <div class="relative">
                     <textarea id="outputResult" rows="7" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-indigo-300 resize-none focus:outline-none"></textarea>
                 </div>
             </div>
-
-            <button onclick="copyToClipboard()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/2">
-                📋 최종 API 로더 스크립트 복사하기
-            </button>
         </div>
     </div>
 
@@ -89,6 +103,11 @@
             };
             reader.readAsText(file);
         });
+
+        function clearInput() {
+            document.getElementById('scriptInput').value = '';
+            document.getElementById('fileInput').value = '';
+        }
 
         function getRandomStr(len) {
             const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -141,6 +160,10 @@
         });
 
         function updateLoaderScript(url) {
+            const isAntiHook = document.getElementById('antiHook').checked;
+            const isAntiDebug = document.getElementById('antiDebug').checked;
+            const isAntiTamper = document.getElementById('antiTamper').checked;
+
             const v1 = getRandomStr(7);
             const v2 = getRandomStr(8);
             const v3 = getRandomStr(6);
@@ -153,6 +176,37 @@
             const v10 = getRandomStr(8);
             const v11 = getRandomStr(6);
             const v12 = getRandomStr(9);
+            const v13 = getRandomStr(7);
+            const v14 = getRandomStr(8);
+
+            let antiHookCode = '';
+            if (isAntiHook) {
+                antiHookCode = `
+local ${v13}=game.HttpGet
+if tostring(${v13}):find("function: 0x")==nil and not tostring(${v13}):find("builtin") then
+error(${v1})
+end
+`;
+            }
+
+            let antiDebugCode = '';
+            if (isAntiDebug) {
+                antiDebugCode = `
+if debug and debug.info then
+local ${v14}=pcall(function() return debug.info(1, "f") end)
+if not ${v14} then error(${v1}) end
+end
+`;
+            }
+
+            let antiTamperCode = '';
+            if (isAntiTamper) {
+                antiTamperCode = `
+if not getfenv or not pcall or not loadstring then
+error(${v1})
+end
+`;
+            }
 
             let decodeLogic = '';
             if (currentObfType === 'hex') {
@@ -183,6 +237,9 @@ end
 return true
 end
 if not ${v2}() then return end
+${antiHookCode}
+${antiDebugCode}
+${antiTamperCode}
 local ${v3}=game
 local ${v4}=${v3}.HttpGet
 local ${v5},${v6}=pcall(function()
@@ -209,8 +266,9 @@ end`;
         function copyPayload() {
             const payload = document.getElementById('encryptedPayloadOutput');
             payload.select();
+            payload.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(payload.value).then(() => {
-                alert('암호화된 페이로드가 복사되었습니다.');
+                alert('암호화된 페이로드 코드가 복사되었습니다.');
             });
         }
 
