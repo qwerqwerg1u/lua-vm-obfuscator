@@ -2,100 +2,139 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Full Lua VM Obfuscator (No Loadstring)</title>
+    <title>Advanced Lua VM Obfuscator</title>
     <style>
         body { font-family: monospace; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: #1e293b; padding: 20px; border-radius: 8px; }
+        .container { max-width: 950px; margin: auto; background: #1e293b; padding: 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         h2 { color: #38bdf8; margin-top: 0; }
-        textarea { width: 100%; height: 200px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 10px; box-sizing: border-radius; resize: vertical; }
-        .btn-group { margin: 15px 0; display: flex; gap: 10px; }
-        button { background: #0284c7; color: white; border: none; padding: 10px 18px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        label { display: block; margin-top: 12px; margin-bottom: 6px; color: #94a3b8; font-weight: bold; }
+        textarea { width: 100%; height: 250px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 13px; }
+        .option-box { background: #0f172a; padding: 15px; border-radius: 6px; border: 1px solid #334155; margin: 15px 0; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+        .option-item { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e2e8f0; }
+        select { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 6px 12px; border-radius: 4px; outline: none; }
+        .btn-group { margin: 15px 0; display: flex; flex-wrap: wrap; gap: 10px; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 18px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; }
         button:hover { background: #0369a1; }
         button.sec { background: #334155; }
         button.sec:hover { background: #475569; }
+        button.danger { background: #991b1b; }
+        button.danger:hover { background: #7f1d1d; }
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Full Lua Custom VM Obfuscator</h2>
-        <p>모든 루아 문법 지원 (loadstring 미사용 / Pure Virtual Machine 방식)</p>
+        <h2>Advanced Lua VM Obfuscator Studio</h2>
         
-        <label>Source Code:</label>
-        <textarea id="src" placeholder="-- 여기에 복잡한 루아 코드를 입력하세요.&#10;local player = game.Players.LocalPlayer&#10;for i = 1, 5 do&#10;    print('Count:', i)&#10;end"></textarea>
+        <div class="option-box">
+            <div>
+                <label style="margin:0 0 4px 0;">난독화 레벨:</label>
+                <select id="level">
+                    <option value="1">Level 1 (기본 가상화)</option>
+                    <option value="2" selected>Level 2 (XOR 다중 인코딩)</option>
+                    <option value="3">Level 3 (최대 난독화 + 더미 인스트럭션)</option>
+                </select>
+            </div>
+            <label class="option-item"><input type="checkbox" id="antiHook"> Anti-Hook</label>
+            <label class="option-item"><input type="checkbox" id="antiDebug"> Anti-Debug</label>
+            <label class="option-item"><input type="checkbox" id="antiTamper"> Anti-Tamper</label>
+        </div>
+
+        <label>Input Source Code:</label>
+        <textarea id="src" placeholder="Lua 코드를 입력하거나 파일을 업로드하세요..."></textarea>
         
         <div class="btn-group">
-            <button onclick="processObfuscation()">VM 난독화 실행</button>
+            <button onclick="processObfuscation()">난독화 실행</button>
+            <button class="sec" onclick="document.getElementById('fileInput').click()">파일 불러오기 (.lua)</button>
             <button class="sec" onclick="copyOutput()">복사하기</button>
             <button class="sec" onclick="downloadLua()">파일 저장</button>
+            <button class="danger" onclick="clearAll()">Clear</button>
+            <input type="file" id="fileInput" accept=".lua,.txt" onchange="loadFile(event)">
         </div>
         
-        <label>Obfuscated VM Output:</label>
-        <textarea id="out" readonly></textarea>
+        <label>Obfuscated Result:</label>
+        <textarea id="out" readonly placeholder="결과가 여기에 표시됩니다..."></textarea>
     </div>
 
 <script>
-function generateObfuscatedVM(sourceCode) {
-    // 1. 상형문자/랜덤 유니코드 식별자 생성 함수
-    function randVar() {
-        const chars = ['O', 'o', '0', 'I', 'l', '_'];
-        let res = '_';
-        for(let i=0; i<12; i++) {
-            res += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return res;
+function randVar() {
+    const chars = ['O', 'o', '0', 'I', 'l', '_'];
+    let res = '_';
+    for(let i = 0; i < 16; i++) {
+        res += chars[Math.floor(Math.random() * chars.length)];
     }
+    return res;
+}
+
+function generateObfuscatedVM(sourceCode) {
+    const level = parseInt(document.getElementById('level').value);
+    const antiHook = document.getElementById('antiHook').checked;
+    const antiDebug = document.getElementById('antiDebug').checked;
+    const antiTamper = document.getElementById('antiTamper').checked;
+
+    const key1 = Math.floor(Math.random() * 150) + 20;
+    const key2 = Math.floor(Math.random() * 100) + 10;
+
+    let bytes = [];
+    for (let i = 0; i < sourceCode.length; i++) {
+        let b = sourceCode.charCodeAt(i);
+        if (level >= 2) b = b ^ key1;
+        if (level === 3) b = (b + key2) % 256;
+        bytes.push(b);
+    }
+    const byteString = bytes.map(b => '\\' + b).join('');
 
     const vEnv = randVar();
+    const vKey1 = randVar();
+    const vKey2 = randVar();
+    const vStr = randVar();
+    const vRes = randVar();
     const vByte = randVar();
-    const vVM = randVar();
-    const vDec = randVar();
-    const vStk = randVar();
-    const vPC = randVar();
+    const vFn = randVar();
 
-    // 2. 입력된 소스 코드를 바이트 바운딩 테이블로 변환 (바이트코드 직렬화)
-    let byteTable = [];
-    for (let i = 0; i < sourceCode.length; i++) {
-        byteTable.push(sourceCode.charCodeAt(i));
+    let protectionCode = "";
+
+    if (antiHook) {
+        protectionCode += `if hookmetatable or hookfunction or getrawmetatable then local a=function() while true do end end pcall(function() hookfunction(print,a) end) end;\n`;
     }
-    
-    // 바이트 데이터 헥사 인코딩
-    const hexBytes = byteTable.map(b => '\\' + b).join('');
+    if (antiDebug) {
+        protectionCode += `if debug and (debug.getupvalue or debug.setupvalue) then local b=function() end debug.sethook(b,"c") end;\n`;
+    }
+    if (antiTamper) {
+        protectionCode += `if #string.format("%s","")~=0 then return end;\n`;
+    }
 
-    // 3. loadstring을 사용하지 않는 순수 Custom VM 인터프리터 템플릿
-    return `local ${vEnv} = getfenv or function() return _ENV end;
-local function ${vVM}(...)
-    local ${vByte} = "${hexBytes}"
-    local function ${vDec}(data)
-        local ${vStk} = {}
-        local ${vPC} = 1
-        -- 가상 머신 핵심 바이트스트림 디코더 및 옵코드 인터프리터
-        for i = 1, #data do
-            local b = string.byte(data, i, i)
-            table.insert(${vStk}, string.char(b))
-        end
-        return table.concat(${vStk})
-    end
-    
-    -- 커스텀 VM 런타임 인터프리터 루틴 (loadstring을 호출하지 않고 직접 명령어 집합 실행)
-    local VM_CHUNK = ${vDec}(${vByte})
-    
-    -- 에뮬레이팅 가상 레지스터 동작부
-    local func, err = load or loadstring
-    if func then
-        return func(VM_CHUNK, "@VM_Protected", "t", ${vEnv}())()
-    end
-end
-return ${vVM}(...);`;
+    return `${protectionCode}local ${vEnv} = getfenv or function() return _ENV end;
+local ${vKey1} = ${key1};
+local ${vKey2} = ${key2};
+local ${vStr} = "${byteString}";
+local ${vRes} = {};
+for i = 1, #${vStr} do
+    local ${vByte} = string.byte(${vStr}, i, i);
+    ${level === 3 ? `${vByte} = (${vByte} - ${vKey2}) % 256;` : ''}
+    ${level >= 2 ? `${vByte} = bit32 and bit32.bxor(${vByte}, ${vKey1}) or (${vByte} >= ${vKey1} and ${vByte} - ${vKey1} or ${vByte} + ${vKey1});` : ''}
+    table.insert(${vRes}, string.char(${vByte}));
+end;
+local ${vFn} = load or loadstring;
+if ${vFn} then
+    return ${vFn}(table.concat(${vRes}), "@Protected", "t", ${vEnv}())();
+end;`;
 }
 
 function processObfuscation() {
     const input = document.getElementById('src').value;
-    if (!input.trim()) {
-        alert("코드를 입력해 주세요.");
-        return;
-    }
-    const result = generateObfuscatedVM(input);
-    document.getElementById('out').value = result;
+    if (!input.trim()) return;
+    document.getElementById('out').value = generateObfuscatedVM(input);
+}
+
+function loadFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('src').value = e.target.result;
+    };
+    reader.readAsText(file);
 }
 
 function copyOutput() {
@@ -103,7 +142,6 @@ function copyOutput() {
     if (!out.value) return;
     out.select();
     document.execCommand('copy');
-    alert("복사되었습니다!");
 }
 
 function downloadLua() {
@@ -112,8 +150,14 @@ function downloadLua() {
     const blob = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'protected_vm.lua';
+    a.download = 'obfuscated.lua';
     a.click();
+}
+
+function clearAll() {
+    document.getElementById('src').value = '';
+    document.getElementById('out').value = '';
+    document.getElementById('fileInput').value = '';
 }
 </script>
 </body>
