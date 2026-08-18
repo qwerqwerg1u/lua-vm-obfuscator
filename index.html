@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zk Secure Studio Advanced</title>
+    <title>Zk Secure Studio - Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8">
         <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
-            <h1 class="text-2xl font-bold tracking-tight text-indigo-400">⚡ Zk Secure Studio Advanced</h1>
-            <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">v4.0 Enterprise</span>
+            <h1 class="text-2xl font-bold tracking-tight text-indigo-400">⚡ Zk Secure Studio Ultimate</h1>
+            <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">XOR & No-Keyword Engine</span>
         </div>
 
         <div id="editor-section" class="space-y-6">
             <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">스크립트 파일 업로드 또는 직접 입력</label>
+                <label class="block text-sm font-semibold mb-2 text-slate-300">원본 스크립트 입력 또는 파일 업로드</label>
                 <div class="flex items-center gap-3 mb-3">
                     <input type="file" id="fileInput" accept=".lua,.txt" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
                 </div>
@@ -25,51 +25,61 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold mb-2 text-slate-300">난독화 방식</label>
+                    <label class="block text-sm font-semibold mb-2 text-slate-300">난독화 및 암호화 방식</label>
                     <select id="obfType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500">
-                        <option value="hex" selected>16진수 난독화 (Hex)</option>
-                        <option value="dec">10진수 난독화 (Decimal)</option>
+                        <option value="hex" selected>16진수 XOR 난독화 (Hex)</option>
+                        <option value="dec">10진수 XOR 난독화 (Decimal)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold mb-2 text-slate-300">엔터프라이즈 보호 시스템</label>
+                    <label class="block text-sm font-semibold mb-2 text-slate-300">시스템 보호 모드</label>
                     <div class="flex items-center h-12 px-4 bg-slate-950 border border-slate-800 rounded-xl text-sm text-indigo-300">
-                        🛡️ 고도화된 안티 후킹 & 가드 레이어 활성화
+                        🔒 무주석 / 키워드 우회 / 안티후킹 활성
                     </div>
                 </div>
             </div>
 
             <button onclick="generateLoader()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/2">
-                세이브 및 고도화 API 로더 생성
+                세이브 및 XOR API 로더 생성
             </button>
         </div>
 
         <div id="result-section" class="hidden space-y-6 mt-6 pt-6 border-t border-slate-800">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-bold text-emerald-400">✨ 고도화 로더 생성 완료</h2>
+                <h2 class="text-lg font-bold text-emerald-400">✨ XOR 로더 및 암호화 파일 생성 완료</h2>
                 <button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">다시 만들기</button>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-2 text-slate-300">깃허브 업로드용 암호화된 코드 결과물</label>
+                <textarea id="encryptedPayloadOutput" rows="4" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
+                <button onclick="copyPayload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 rounded-lg transition mb-4">
+                    📋 암호화된 페이로드 파일 내용 복사하기 (이 내용을 깃허브에 업로드하세요)
+                </button>
             </div>
 
             <div>
                 <label class="block text-sm font-semibold mb-2 text-slate-300">업로드한 Raw 링크 입력</label>
                 <input type="text" id="githubUrlInput" placeholder="https://raw.githubusercontent.com/계정/저장소/main/script.lua" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono focus:outline-none focus:border-indigo-500 mb-3">
-                <p class="text-xs text-slate-500 mb-3">* 링크 변경 시 매번 다중 구조로 무작위 고도화됩니다.</p>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">복사 전용 고도화 API 로더 스크립트</label>
+                <label class="block text-sm font-semibold mb-2 text-slate-300">복사 전용 최종 API 로더 스크립트</label>
                 <div class="relative">
-                    <textarea id="outputResult" rows="8" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-indigo-300 resize-none focus:outline-none"></textarea>
+                    <textarea id="outputResult" rows="7" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-indigo-300 resize-none focus:outline-none"></textarea>
                 </div>
             </div>
 
             <button onclick="copyToClipboard()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/2">
-                📋 고도화 API 로더 스크립트 복사하기
+                📋 최종 API 로더 스크립트 복사하기
             </button>
         </div>
     </div>
 
     <script>
+        let currentXorKey = 0x5A;
+        let currentObfType = 'hex';
+
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -96,10 +106,32 @@
                 return;
             }
 
+            currentObfType = document.getElementById('obfType').value;
+            currentXorKey = Math.floor(Math.random() * 150) + 20;
+
+            let encodedData = '';
+            if (currentObfType === 'hex') {
+                let parts = [];
+                for (let i = 0; i < rawCode.length; i++) {
+                    let xored = rawCode.charCodeAt(i) ^ currentXorKey;
+                    parts.push('\\x' + xored.toString(16).padStart(2, '0'));
+                }
+                encodedData = `return "${parts.join('')}"`;
+            } else {
+                let parts = [];
+                for (let i = 0; i < rawCode.length; i++) {
+                    let xored = rawCode.charCodeAt(i) ^ currentXorKey;
+                    parts.push(xored);
+                }
+                encodedData = `return {${parts.join(',')}}`;
+            }
+
+            document.getElementById('encryptedPayloadOutput').value = encodedData;
+
             document.getElementById('editor-section').classList.add('hidden');
             document.getElementById('result-section').classList.remove('hidden');
 
-            const defaultLink = "https://raw.githubusercontent.com/본인계정/저장소/main/script.lua";
+            const defaultLink = "https://raw.githubusercontent.com/계정/저장소/main/script.lua";
             document.getElementById('githubUrlInput').value = defaultLink;
             updateLoaderScript(defaultLink);
         }
@@ -122,6 +154,26 @@
             const v11 = getRandomStr(6);
             const v12 = getRandomStr(9);
 
+            let decodeLogic = '';
+            if (currentObfType === 'hex') {
+                decodeLogic = `
+local ${v8}=""
+for ${v9}=1,#${v7} do
+local ${v10}=tonumber(${v7}:sub(${v9},${v9}+3))
+if ${v10} then
+${v8}=${v8}..string.char(${v10}~=${currentXorKey})
+end
+end
+`;
+            } else {
+                decodeLogic = `
+local ${v8}=""
+for _,${v9} in ipairs(${v7}) do
+${v8}=${v8}..string.char(${v9}~=${currentXorKey})
+end
+`;
+            }
+
             const loaderCode = `local ${v1}="보호중인스크립트"
 local function ${v2}()
 if not game or not game:GetService then
@@ -135,20 +187,16 @@ local ${v3}=game
 local ${v4}=${v3}.HttpGet
 local ${v5},${v6}=pcall(function()
 local ${v7}=${v4}(${v3},"${url}")
-if not ${v7} or #(${v7})<10 or ${v7}:find("<html>") or ${v7}:find("404") or ${v7}:find("Not Found") then
+if not ${v7} or #(${v7})<5 or ${v7}:find("<html>") or ${v7}:find("404") then
 error(${v1})
 end
-local ${v8},${v9}=pcall(function()
-return loadstring(${v7})
-end)
-if not ${v8} or type(${v9})~="function" then
+local ${v7}=loadstring(${v7})()
+${decodeLogic}
+local ${v11}=getfenv()[string.char(108,111,97,100,115,116,114,105,110,103)](${v8})
+if type(${v11})~="function" then
 error(${v1})
 end
-local ${v10},${v11}=pcall(${v9})
-if not ${v10} then
-error(${v1})
-end
-return ${v11}
+return ${v11}()
 end)
 if not ${v5} then
 local ${v12}=warn
@@ -158,12 +206,20 @@ end`;
             document.getElementById('outputResult').value = loaderCode;
         }
 
+        function copyPayload() {
+            const payload = document.getElementById('encryptedPayloadOutput');
+            payload.select();
+            navigator.clipboard.writeText(payload.value).then(() => {
+                alert('암호화된 페이로드가 복사되었습니다.');
+            });
+        }
+
         function copyToClipboard() {
             const copyText = document.getElementById('outputResult');
             copyText.select();
             copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value).then(() => {
-                alert('복사되었습니다!');
+                alert('최종 API 로더 스크립트가 복사되었습니다.');
             });
         }
 
