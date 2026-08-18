@@ -7,135 +7,119 @@
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
-
 <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
+<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+    <h1 class="text-2xl font-bold tracking-tight text-indigo-400">
+        Zk Secure Studio <span class="text-emerald-400 text-sm">PRO</span>
+    </h1>
+    <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">
+        Advanced Engine
+    </span>
+</div>
 
-    <!-- HEADER -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-        <h1 class="text-2xl font-bold tracking-tight text-indigo-400">
-            Zk Secure Studio <span class="text-emerald-400 text-sm">PRO</span>
-        </h1>
-        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">
-            Advanced Engine
-        </span>
+<div id="editor-section" class="space-y-6">
+    <div>
+        <div class="flex items-center justify-between mb-2">
+            <label class="text-sm font-semibold text-slate-300">
+                원본 스크립트 입력 또는 파일 업로드
+            </label>
+            <button onclick="clearInput()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-lg transition font-medium">
+                내용 지우기
+            </button>
+        </div>
+
+        <div class="flex items-center gap-3 mb-3">
+            <input type="file" id="fileInput" accept=".lua,.txt" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
+        </div>
+
+        <textarea id="scriptInput" rows="10" placeholder="루아 코드를 입력하세요..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
     </div>
 
-    <!-- EDITOR -->
-    <div id="editor-section" class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-slate-300">
+                난독화 방식
+            </label>
+            <select id="obfType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500">
+                <option value="hex" selected>16진수 XOR 난독화 (Hex)</option>
+                <option value="dec">10진수 XOR 난독화 (Decimal)</option>
+            </select>
+        </div>
 
         <div>
-            <div class="flex items-center justify-between mb-2">
-                <label class="text-sm font-semibold text-slate-300">
-                    원본 스크립트 입력 또는 파일 업로드
+            <label class="block text-sm font-semibold mb-2 text-slate-300">
+                강력한 보안 및 압축 옵션
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                    <input type="checkbox" id="antiHook" class="accent-indigo-600">
+                    <span class="text-xs text-slate-300 font-medium">안티훅</span>
                 </label>
-                <button onclick="clearInput()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-lg transition font-medium">
-                    내용 지우기
-                </button>
-            </div>
 
-            <!-- FILE -->
-            <div class="flex items-center gap-3 mb-3">
-                <input type="file" id="fileInput" accept=".lua,.txt" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
-            </div>
-
-            <!-- INPUT -->
-            <textarea id="scriptInput" rows="10" placeholder="루아 코드를 입력하세요..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
-        </div>
-
-        <!-- OPTIONS -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            <!-- TYPE -->
-            <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">
-                    난독화 방식
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                    <input type="checkbox" id="antiDebug" class="accent-indigo-600">
+                    <span class="text-xs text-slate-300 font-medium">안티디버그</span>
                 </label>
-                <select id="obfType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500">
-                    <option value="hex" selected>16진수 XOR 난독화 (Hex)</option>
-                    <option value="dec">10진수 XOR 난독화 (Decimal)</option>
-                </select>
-            </div>
 
-            <!-- SECURITY -->
-            <div>
-                <label class="block text-sm font-semibold mb-2 text-slate-300">
-                    강력한 보안 및 압축 옵션
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                    <input type="checkbox" id="antiTamper" class="accent-indigo-600">
+                    <span class="text-xs text-slate-300 font-medium">안티탬퍼</span>
                 </label>
-                <div class="grid grid-cols-2 gap-2">
-                    
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-                        <input type="checkbox" id="antiHook" class="accent-indigo-600">
-                        <span class="text-xs text-slate-300 font-medium">안티훅</span>
-                    </label>
 
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-                        <input type="checkbox" id="antiDebug" class="accent-indigo-600">
-                        <span class="text-xs text-slate-300 font-medium">안티디버그</span>
-                    </label>
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                    <input type="checkbox" id="antiSpy" class="accent-indigo-600">
+                    <span class="text-xs text-slate-300 font-medium">안티스파이</span>
+                </label>
 
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-                        <input type="checkbox" id="antiTamper" class="accent-indigo-600">
-                        <span class="text-xs text-slate-300 font-medium">안티탬퍼</span>
-                    </label>
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                    <input type="checkbox" id="envLock" class="accent-indigo-600">
+                    <span class="text-xs text-slate-300 font-medium">환경잠금</span>
+                </label>
 
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-                        <input type="checkbox" id="antiSpy" class="accent-indigo-600">
-                        <span class="text-xs text-slate-300 font-medium">안티스파이</span>
-                    </label>
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
+                    <input type="checkbox" id="doubleObf" class="accent-indigo-600">
+                    <span class="text-xs text-slate-300 font-medium">더블난독화</span>
+                </label>
 
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-                        <input type="checkbox" id="envLock" class="accent-indigo-600">
-                        <span class="text-xs text-slate-300 font-medium">환경잠금</span>
-                    </label>
-
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 h-11 px-2 rounded-xl cursor-pointer hover:border-indigo-500/50 transition">
-                        <input type="checkbox" id="doubleObf" class="accent-indigo-600">
-                        <span class="text-xs text-slate-300 font-medium">더블난독화</span>
-                    </label>
-
-                    <label class="flex items-center justify-center gap-2 bg-slate-950 border border-emerald-800/50 h-11 px-2 rounded-xl cursor-pointer hover:border-emerald-500/50 transition col-span-2">
-                        <input type="checkbox" id="minifyCode" class="accent-emerald-600" checked>
-                        <span class="text-xs text-emerald-300 font-bold">완벽한 1줄 압축 (Strict Minify)</span>
-                    </label>
-                </div>
+                <label class="flex items-center justify-center gap-2 bg-slate-950 border border-emerald-800/50 h-11 px-2 rounded-xl cursor-pointer hover:border-emerald-500/50 transition col-span-2">
+                    <input type="checkbox" id="minifyCode" class="accent-emerald-600" checked>
+                    <span class="text-xs text-emerald-300 font-bold">완벽한 1줄 압축 (Strict Minify)</span>
+                </label>
             </div>
         </div>
+    </div>
 
-        <!-- PROCESS -->
-        <button id="processButton" onclick="processScript()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl transition shadow-lg shadow-indigo-600/20 text-base">
-            초강력 난독화 실행
+    <button id="processButton" onclick="processScript()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl transition shadow-lg shadow-indigo-600/20 text-base">
+        초강력 난독화 실행
+    </button>
+</div>
+
+<div id="result-section" class="hidden space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-emerald-400">
+            난독화 완료
+        </h2>
+        <button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">
+            돌아가기
         </button>
     </div>
 
-    <!-- RESULT -->
-    <div id="result-section" class="hidden space-y-6">
-        <div class="flex items-center justify-between">
-            <h2 class="text-lg font-bold text-emerald-400">
-                난독화 완료
-            </h2>
-            <button onclick="resetStudio()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition">
-                돌아가기
-            </button>
-        </div>
-
-        <!-- OUTPUT -->
-        <div>
-            <label class="block text-sm font-semibold mb-2 text-slate-300">
-                난독화된 결과 코드
-            </label>
-            <textarea id="outputResult" rows="14" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
-        </div>
-
-        <!-- BUTTONS -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button onclick="copyToClipboard()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
-                복사하기
-            </button>
-            <button onclick="downloadFile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">
-                파일 다운로드
-            </button>
-        </div>
+    <div>
+        <label class="block text-sm font-semibold mb-2 text-slate-300">
+            난독화된 결과 코드
+        </label>
+        <textarea id="outputResult" rows="14" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 resize-none focus:outline-none mb-3"></textarea>
     </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button onclick="copyToClipboard()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+            복사하기
+        </button>
+        <button onclick="downloadFile()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">
+            파일 다운로드
+        </button>
+    </div>
+</div>
 </div>
 
 <script>
@@ -167,20 +151,29 @@ function randomKey() {
 }
 
 function minifyLua(code) {
-    const lines = code.split("\n");
+    let clean = code.replace(/--\[\[[\s\S]*?\]\]/g, "");
+    const lines = clean.split("\n");
     const cleanLines = [];
-    let inMultilineComment = false;
     for (let line of lines) {
-        let trimmed = line.trim();
-        if (trimmed.startsWith("--[[")) inMultilineComment = true;
-        if (inMultilineComment) {
-            if (trimmed.includes("]]")) inMultilineComment = false;
-            continue;
+        let inString = false;
+        let strChar = "";
+        let commentIndex = -1;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            const next = line[i + 1];
+            if (!inString && (c === '"' || c === "'")) {
+                inString = true;
+                strChar = c;
+            } else if (inString && c === strChar && line[i - 1] !== '\\') {
+                inString = false;
+            } else if (!inString && c === '-' && next === '-') {
+                commentIndex = i;
+                break;
+            }
         }
-        if (trimmed.startsWith("--")) continue;
-        const commentIndex = line.indexOf("--");
         if (commentIndex !== -1) line = line.substring(0, commentIndex);
-        if (line.trim().length > 0) cleanLines.push(line.trim());
+        let trimmed = line.trim();
+        if (trimmed.length > 0) cleanLines.push(trimmed);
     }
     return cleanLines.join(" ");
 }
@@ -232,8 +225,17 @@ function processScript() {
 
         let luaLines = [];
         const v_loader = rStr(6);
-        
-        // loadstring nil 에러를 방지하는 강력한 호환성 로더 설정
+        const v_buf = rStr(6);
+        const v_data = rStr(7);
+        const v_out = rStr(6);
+        const v_bxor = rStr(8);
+        const v_char = rStr(5);
+        const v_sub = rStr(6);
+        const v_tonum = rStr(7);
+        const v_i = rStr(4);
+        const v_n = rStr(5);
+        const v_f = rStr(5);
+
         luaLines.push(`local ${v_loader}=(loadstring or load)`);
         luaLines.push(`if type(${v_loader})~="function"then return end`);
 
@@ -248,21 +250,11 @@ function processScript() {
             luaLines.push(`local _ts=tostring;if _ts(pcall):find("hook")then return end`);
         }
         if (isAntiSpy) {
-            luaLines.push(`if hookfunction then local _h=tostring(hookfunction);if _h:find("hook") or _h:find("exploit") then return end end`);
+            luaLines.push(`if hookfunction then local _h=tostring(hookfunction);if _h:find("exploit") then return end end`);
         }
         if (isEnvLock) {
             luaLines.push(`pcall(function()setmetatable(getfenv and getfenv() or _G,{__metatable="Locked"})end)`);
         }
-
-        const v_data = rStr(7);
-        const v_out = rStr(6);
-        const v_bxor = rStr(8);
-        const v_char = rStr(5);
-        const v_sub = rStr(6);
-        const v_tonum = rStr(7);
-        const v_i = rStr(4);
-        const v_n = rStr(5);
-        const v_f = rStr(5);
 
         if (isHex) {
             luaLines.push(`local ${v_data}="${encodedData}"`);
@@ -270,19 +262,19 @@ function processScript() {
             luaLines.push(`local ${v_data}={${encodedData}}`);
         }
 
-        luaLines.push(`local ${v_out}=""`);
-        // Lua 구버전, 신버전 모두 호환되는 비트 연산
-        luaLines.push(`local ${v_bxor}=(bit32 and bit32.bxor or bit and bit.bxor)`);
+        luaLines.push(`local ${v_buf}={}`);
+        luaLines.push(`local ${v_bxor}=(bit32 and bit32.bxor)or(bit and bit.bxor)or(function(a,b)local r,m=0,1 while a>0 or b>0 do if(a%2)~=(b%2)then r=r+m end a=math.floor(a/2)b=math.floor(b/2)m=m*2 end return r end)`);
         luaLines.push(`local ${v_char}=string.char`);
         luaLines.push(`local ${v_sub}=string.sub`);
         luaLines.push(`local ${v_tonum}=tonumber`);
 
         if (isHex) {
-            luaLines.push(`for ${v_i}=1,#${v_data},2 do local ${v_n}=${v_tonum}(${v_sub}(${v_data},${v_i},${v_i}+1),16);if ${v_n} then ${v_out}=${v_out}..${v_char}(${v_bxor}(${v_n},${key})) end end`);
+            luaLines.push(`for ${v_i}=1,#${v_data},2 do local ${v_n}=${v_tonum}(${v_sub}(${v_data},${v_i},${v_i}+1),16);if ${v_n} then ${v_buf}[#${v_buf}+1]=${v_char}(${v_bxor}(${v_n},${key})) end end`);
         } else {
-            luaLines.push(`for _,${v_n} in ipairs(${v_data}) do ${v_out}=${v_out}..${v_char}(${v_bxor}(${v_n},${key})) end`);
+            luaLines.push(`for _,${v_n} in ipairs(${v_data}) do ${v_buf}[#${v_buf}+1]=${v_char}(${v_bxor}(${v_n},${key})) end`);
         }
 
+        luaLines.push(`local ${v_out}=table.concat(${v_buf})`);
         luaLines.push(`local ${v_f}=${v_loader}(${v_out})`);
         luaLines.push(`if type(${v_f})=="function" then local _s,_e=pcall(${v_f});if not _s then return end end`);
 
@@ -293,6 +285,7 @@ function processScript() {
 
             const dv_loader = rStr(6);
             const dv_data = rStr(5);
+            const dv_buf = rStr(5);
             const dv_out = rStr(5);
             const dv_bxor = rStr(6);
             const dv_char = rStr(4);
@@ -306,19 +299,19 @@ function processScript() {
             doubleLines.push(`local ${dv_loader}=(loadstring or load)`);
             doubleLines.push(`if type(${dv_loader})~="function"then return end`);
             doubleLines.push(`local ${dv_data}="${dEncoded}"`);
-            doubleLines.push(`local ${dv_out}=""`);
-            doubleLines.push(`local ${dv_bxor}=(bit32 and bit32.bxor or bit and bit.bxor)`);
+            doubleLines.push(`local ${dv_buf}={}`);
+            doubleLines.push(`local ${dv_bxor}=(bit32 and bit32.bxor)or(bit and bit.bxor)or(function(a,b)local r,m=0,1 while a>0 or b>0 do if(a%2)~=(b%2)then r=r+m end a=math.floor(a/2)b=math.floor(b/2)m=m*2 end return r end)`);
             doubleLines.push(`local ${dv_char}=string.char`);
             doubleLines.push(`local ${dv_sub}=string.sub`);
             doubleLines.push(`local ${dv_tonum}=tonumber`);
-            doubleLines.push(`for ${dv_i}=1,#${dv_data},2 do local ${dv_n}=${dv_tonum}(${dv_sub}(${dv_data},${dv_i},${dv_i}+1),16);if ${dv_n} then ${dv_out}=${dv_out}..${dv_char}(${dv_bxor}(${dv_n},${dKey})) end end`);
+            doubleLines.push(`for ${dv_i}=1,#${dv_data},2 do local ${dv_n}=${dv_tonum}(${dv_sub}(${dv_data},${dv_i},${dv_i}+1),16);if ${dv_n} then ${dv_buf}[#${dv_buf}+1]=${dv_char}(${dv_bxor}(${dv_n},${dKey})) end end`);
+            doubleLines.push(`local ${dv_out}=table.concat(${dv_buf})`);
             doubleLines.push(`local ${dv_f}=${dv_loader}(${dv_out})`);
             doubleLines.push(`if type(${dv_f})=="function" then pcall(${dv_f}) end`);
 
             luaLines = doubleLines;
         }
 
-        // 압축(Minify) 체크 시 세미콜론(;)으로 연결하여 완벽한 1줄을 생성 (주석/줄바꿈 절대 없음)
         let finalCode = luaLines.join(isMinify ? ";" : "\n");
 
         output.value = finalCode;
@@ -371,6 +364,5 @@ function resetStudio() {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 </script>
-
 </body>
 </html>
