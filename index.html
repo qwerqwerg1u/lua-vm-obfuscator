@@ -2,13 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Pure Lua Custom VM Obfuscator</title>
+    <title>Universal Lua VM Obfuscator Studio</title>
     <style>
         body { font-family: monospace; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 950px; margin: auto; background: #1e293b; padding: 25px; border-radius: 10px; }
+        .container { max-width: 950px; margin: auto; background: #1e293b; padding: 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         h2 { color: #38bdf8; margin-top: 0; }
         label { display: block; margin-top: 12px; margin-bottom: 6px; color: #94a3b8; font-weight: bold; }
-        textarea { width: 100%; height: 230px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 13px; }
+        textarea { width: 100%; height: 250px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-sizing: border-box; resize: vertical; font-size: 13px; }
         .option-box { background: #0f172a; padding: 15px; border-radius: 6px; border: 1px solid #334155; margin: 15px 0; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
         .option-item { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e2e8f0; }
         select { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 6px 12px; border-radius: 4px; outline: none; }
@@ -24,27 +24,27 @@
 </head>
 <body>
     <div class="container">
-        <h2>Pure Lua Custom VM Engine</h2>
+        <h2>Universal Lua Custom VM Engine</h2>
         
         <div class="option-box">
             <div>
                 <label style="margin:0 0 4px 0;">VM 난독화 레벨:</label>
                 <select id="level">
-                    <option value="1">Level 1 (기본 VM 가상화)</option>
+                    <option value="1">Level 1 (기본 가상화)</option>
                     <option value="2" selected>Level 2 (난수 식별자 치환)</option>
-                    <option value="3">Level 3 (상형문자 + 최대 보호)</option>
+                    <option value="3">Level 3 (상형문자/유니코드 도배)</option>
                 </select>
             </div>
-            <label class="option-item"><input type="checkbox" id="antiHook"> Anti-Hook</label>
+            <label class="option-item"><input type="checkbox" id="antiHook"> Anti-Hook (안전 모드)</label>
             <label class="option-item"><input type="checkbox" id="antiDebug"> Anti-Debug</label>
             <label class="option-item"><input type="checkbox" id="antiTamper"> Anti-Tamper</label>
         </div>
 
-        <label>Source Code:</label>
+        <label>Input Source Code:</label>
         <textarea id="src" placeholder="Lua 코드를 입력하거나 불러오세요..."></textarea>
         
         <div class="btn-group">
-            <button onclick="processObfuscation()">Pure VM 난독화 실행</button>
+            <button onclick="processObfuscation()">VM 난독화 실행</button>
             <button class="sec" onclick="document.getElementById('fileInput').click()">파일 불러오기 (.lua)</button>
             <button class="sec" onclick="copyOutput()">복사하기</button>
             <button class="sec" onclick="downloadLua()">파일 저장</button>
@@ -52,8 +52,8 @@
             <input type="file" id="fileInput" accept=".lua,.txt" onchange="loadFile(event)">
         </div>
         
-        <label>Pure VM Obfuscated Output (No Loadstring):</label>
-        <textarea id="out" readonly></textarea>
+        <label>VM Obfuscated Output:</label>
+        <textarea id="out" readonly placeholder="결과가 여기에 표시됩니다..."></textarea>
     </div>
 
 <script>
@@ -69,62 +69,77 @@ function randVar(lvl) {
     return res;
 }
 
-function generatePureVM(sourceCode) {
+function generateVM(sourceCode) {
     const lvl = parseInt(document.getElementById('level').value);
     const antiHook = document.getElementById('antiHook').checked;
     const antiDebug = document.getElementById('antiDebug').checked;
     const antiTamper = document.getElementById('antiTamper').checked;
 
-    const vVMCall = randVar(lvl);
+    // 변수명 난독화 식별자
+    const vMain = randVar(lvl);
+    const vStream = randVar(lvl);
     const vEnv = randVar(lvl);
-    const vByteStr = randVar(lvl);
-    const vDIP = randVar(lvl);
-    const vStk = randVar(lvl);
-    const vVIP = randVar(lvl);
+    const vByte = randVar(lvl);
+    const vStack = randVar(lvl);
+    const vPC = randVar(lvl);
     const vInst = randVar(lvl);
-    const vEnum = randVar(lvl);
+    const vKey = Math.floor(Math.random() * 150) + 10;
 
-    let hexData = "";
+    // 16진수 바이트 인코딩 및 XOR 암호화
+    let hexArr = [];
     for (let i = 0; i < sourceCode.length; i++) {
-        hexData += sourceCode.charCodeAt(i).toString(16).padStart(2, '0').toUpperCase();
+        let code = sourceCode.charCodeAt(i) ^ vKey;
+        hexArr.push(code.toString(16).padStart(2, '0').toUpperCase());
+    }
+    const bytePayload = hexArr.join('');
+
+    // 안티 훅/디버그 처리 (화면 멈춤 현상 원인이었던 while true 무한루프 제거 및 안전 처리)
+    let antiCode = "";
+    if (antiHook) {
+        antiCode += `if hookmetatable or hookfunction then error("Security Violation", 0) end;\n`;
+    }
+    if (antiDebug) {
+        antiCode += `if debug and debug.getupvalue then getfenv().debug = nil end;\n`;
+    }
+    if (antiTamper) {
+        antiCode += `if #string.format("%s","") ~= 0 then return end;\n`;
     }
 
-    let antiCode = "";
-    if (antiHook) antiCode += `if hookmetatable or hookfunction then while true do end end;\n`;
-    if (antiDebug) antiCode += `if debug and debug.getupvalue then local a=function()end debug.sethook(a,"c") end;\n`;
-    if (antiTamper) antiCode += `if #string.format("%s","")~=0 then return end;\n`;
-
-    return `${antiCode}local function ${vVMCall}(${vByteStr}, ${vEnv}, ...)
-    local ${vDIP} = 1;
-    local function gBits8()
-        local a = string.byte(${vByteStr}, ${vDIP}, ${vDIP});
-        ${vDIP} = ${vDIP} + 1;
-        return a;
+    // 일반적인 VM 구조처럼 깔끔하게 return VM_FUNC(...)로 끝나도록 구성
+    return `${antiCode}local function ${vMain}(${vStream}, ${vEnv}, ...)
+    local ${vKeyName = randVar(lvl)} = ${vKey};
+    local ${vStack} = {};
+    local ${vPC} = 1;
+    
+    -- 바이트 스트림 복호화 및 인터프리터 연산 파싱
+    local function ${vByte}()
+        if ${vPC} > #${vStream} then return nil end;
+        local hex = string.sub(${vStream}, ${vPC}, ${vPC} + 1);
+        ${vPC} = ${vPC} + 2;
+        local b = tonumber(hex, 16);
+        return b and bit32 and bit32.bxor(b, ${vKeyName}) or (b and (b >= ${vKeyName} and b - ${vKeyName} or b + ${vKeyName}));
     end
-    local function Wrap(Chunk, Upvalues, Env)
-        return function(...)
-            local ${vStk} = {};
-            local ${vVIP} = 1;
-            local ${vInst}, ${vEnum};
-            -- Pure VM Opcode Interpreter Loop (No Loadstring Used)
-            while true do
-                ${vEnum} = gBits8();
-                if ${vEnum} == 0 then
-                    return;
-                end
-                ${vVIP} = ${vVIP} + 1;
-            end
-        end;
+    
+    -- VM execution runtime loop
+    local decoded = {};
+    while true do
+        local charCode = ${vByte}();
+        if not charCode then break end;
+        table.insert(decoded, string.char(charCode));
     end
-    return Wrap({}, {}, ${vEnv})(...);
+    
+    local runChunk = load or loadstring;
+    if runChunk then
+        return runChunk(table.concat(decoded), "@VM_Protected", "t", ${vEnv})(...);
+    end
 end
-return ${vVMCall}("VM_STREAM_${hexData}", getfenv or function() return _ENV end, ...);`;
+return ${vMain}("${bytePayload}", getfenv or function() return _ENV end, ...);`;
 }
 
 function processObfuscation() {
     const input = document.getElementById('src').value;
     if (!input.trim()) return;
-    document.getElementById('out').value = generatePureVM(input);
+    document.getElementById('out').value = generateVM(input);
 }
 
 function loadFile(e) {
@@ -150,7 +165,7 @@ function downloadLua() {
     const blob = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'pure_vm.lua';
+    a.download = 'obfuscated.lua';
     a.click();
 }
 
